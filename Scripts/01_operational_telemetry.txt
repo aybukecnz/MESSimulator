@@ -1,0 +1,75 @@
+﻿CREATE TABLE SystemThresholds (
+    ThresholdId SERIAL PRIMARY KEY,
+    ParameterName VARCHAR(50) UNIQUE NOT NULL,
+    MinValue NUMERIC(10, 4) NOT NULL,
+    MaxValue NUMERIC(10, 4) NOT NULL,
+    Description TEXT
+);
+
+INSERT INTO SystemThresholds (ParameterName, MinValue, MaxValue, Description) VALUES
+('WindSpeed', 0.0, 4.0, 'TEST: Rüzgar hızı alt limiti'),
+('ActivePower', 0.0, 300.0, 'TEST: Güç üretimi alt limiti');
+
+
+CREATE TABLE ActiveAlerts (
+    AlertId SERIAL PRIMARY KEY,
+    Timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    AlertType VARCHAR(50) NOT NULL,
+    Severity VARCHAR(20) NOT NULL,
+    Message TEXT NOT NULL
+);
+
+CREATE OR REPLACE FUNCTION check_telemetry_thresholds()
+RETURNS TRIGGER AS $$
+DECLARE
+    v_max_wind NUMERIC;
+    v_max_power NUMERIC;
+BEGIN
+    -- Limitleri tablodan öğren
+    SELECT MaxValue INTO v_max_wind FROM SystemThresholds WHERE ParameterName = 'WindSpeed';
+    SELECT MaxValue INTO v_max_power FROM SystemThresholds WHERE ParameterName = 'ActivePower';
+
+    -- Rüzgar sınırı aştıysa deftere yaz
+    IF NEW.WindSpeed > v_max_wind THEN
+        INSERT INTO ActiveAlerts (AlertType, Severity, Message)
+        VALUES ('OPERASYONEL_ANOMALI', 'Kritik', 'Aşırı rüzgar hızı tespit edildi! Değer: ' || NEW.WindSpeed || ' m/s');
+    END IF;
+
+    -- Güç sınırı aştıysa deftere yaz
+    IF NEW.ActivePower > v_max_power THEN
+        INSERT INTO ActiveAlerts (AlertType, Severity, Message)
+        VALUES ('SİBER_ŞÜPHE', 'Yüksek', 'Anormal güç verisi (Spoofing)! Değer: ' || NEW.ActivePower || ' kW');
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+
+CREATE TRIGGER trg_check_telemetry
+AFTER INSERT ON MachineTelemetry
+FOR EACH ROW
+EXECUTE FUNCTION check_telemetry_thresholds();
+
+-- test aşamaları
+-- Rüzgar limitini imkansız bir seviyeye (50 m/s) çıkaralım (Alarm vermesin)
+UPDATE SystemThresholds SET MaxValue = 50.0 WHERE ParameterName = 'WindSpeed';
+
+-- Güç limitini yine çok düşük (300 kW) tutalım (Alarm versin)
+UPDATE SystemThresholds SET MaxValue = 300.0 WHERE ParameterName = 'ActivePower';
+
+-- Rüzgar hız sınırını gerçek endüstriyel tehlike sınırı olan 25.0 m/s yapalım
+UPDATE SystemThresholds 
+SET MaxValue = 25.0, Description = 'Kritik fırtına sınırı (Cut-out). Türbin frenlemeli.' 
+WHERE ParameterName = 'WindSpeed';
+
+-- Güç üretim sınırını jeneratör maksimum kapasitesi olan 3500.0 kW yapalım
+UPDATE SystemThresholds 
+SET MaxValue = 3500.0, Description = 'Maksimum jeneratör kapasitesi aşımı (Siber enjeksiyon şüphesi).' 
+WHERE ParameterName = 'ActivePower';
+
+TRUNCATE TABLE ActiveAlerts;
+-- tabloyu karıştırmanı engelleyecek şekilde sıfırlamayı sağlar 
+
+SELECT * FROM ActiveAlerts;
+-- arkaplanda işlem yapılırken çalıştırıp tablo oluşumu beklenir
