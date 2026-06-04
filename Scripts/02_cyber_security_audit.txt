@@ -1,41 +1,59 @@
-CREATE TABLE SystemAuditLogs (
-    LogId SERIAL PRIMARY KEY,
-    Timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    IpAddress VARCHAR(45) NOT NULL,
-    MacAddress VARCHAR(17) NOT NULL,
-    TargetTable VARCHAR(50) NOT NULL,
-    ActionType VARCHAR(20) NOT NULL, -- 'INSERT', 'UPDATE', 'SPOOFING_ATTEMPT' vb.
-    Message TEXT NOT NULL
-);
-CREATE TABLE MachineRecipes (
+-- ====================================================================
+-- SENTINEL-MES: FAZ 2 - SÝBER GÜVENLÝK DENETÝM KATMANI (AUDIT LAYER)
+-- Dosya Adý: 02_cyber_security_audit.txt
+-- Açýklama: Kritik üretim reçetelerinin manipülasyonunu izleyen
+--           ve veritabaný seviyesinde suçüstü log üreten trigger mimarisi.
+-- ====================================================================
+
+-- 1. KRÝTÝK ÜRETÝM REÇETELERÝ TABLOSU
+-- Fabrikadaki jeneratör, motor ve türbin ayar parametrelerini tutar.
+CREATE TABLE IF NOT EXISTS public.MachineRecipes (
     RecipeId SERIAL PRIMARY KEY,
     ParameterName VARCHAR(50) NOT NULL,
     Value NUMERIC(10,4) NOT NULL,
     UpdatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Baþlangýç ayar verisi ekleyelim
-INSERT INTO MachineRecipes (ParameterName, Value) VALUES ('TargetRpmLimit', 1500.0);
+-- 2. BAÞLANGIÇ SÝMÜLASYON VERÝSÝ (SEED DATA)
+-- Eðer parametre tabloda yoksa, test verisini güvenli bir þekilde ekler.
+INSERT INTO public.MachineRecipes (ParameterName, Value)
+SELECT 'TargetRpmLimit', 1500.0
+WHERE NOT EXISTS (
+    SELECT 1 FROM public.MachineRecipes WHERE ParameterName = 'TargetRpmLimit'
+);
 
--- Reçete Deðiþimini Ýzleyen Siber Fonksiyon
+-- 3. SÝBER MANÝPÜLASYON ÝZLEME FONKSÝYONU (PL/pgSQL)
+-- Reçete tablosunda bir deðiþiklik olduðunda .NET'i beklemeden doðrudan çalýþýr.
 CREATE OR REPLACE FUNCTION track_recipe_manipulation()
 RETURNS TRIGGER AS $$
 BEGIN
-    -- Birisi kritik parametreyi deðiþtirmeye çalýþýrsa siber audit logu oluþtur
-    INSERT INTO SystemAuditLogs (IpAddress, MacAddress, TargetTable, ActionType, Message)
+    INSERT INTO public.systemauditlogs (timestamp, sourceip, username, actiontype, status, details)
     VALUES (
-        '192.168.1.150', -- Normalde backendden veya sessiondan alýnýr, þimdilik statik simüle ediyoruz
-        '00:1A:2B:3C:4D:5E', 
-        'MachineRecipes', 
-        'CRITICAL_UPDATE', 
-        'Kritik üretim reçetesi deðiþtirildi! Eski Deðer: ' || OLD.Value || ' -> Yeni Deðer: ' || NEW.Value
+        NOW(),                  -- Veritabanýnýn zorunlu tuttuðu zaman damgasý
+        '192.168.1.150',        -- Simüle edilen þüpheli IP adresi
+        'Hacker_Anonymous',     -- Yetkisiz iþlem gerçekleþtiren sahte aktör
+        'RECIPE_MANIPULATION',  -- Siber güvenlik olay tipi
+        'CRITICAL',             -- Olayýn kritiklik seviyesi
+        'Kritik üretim reçetesi izinsiz deðiþtirildi! Eski Deðer: ' || OLD.Value || ' -> Yeni Deðer: ' || NEW.Value
     );
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
--- Trigger'ý reçete tablosuna baðlama
+-- 4. TETÝKLEYÝCÝ (TRIGGER) KURULUMU
+-- Fonksiyonu MachineRecipes tablosunun UPDATE ve DELETE olaylarýna baðlar.
+DROP TRIGGER IF EXISTS trg_track_recipe_changes ON public.MachineRecipes;
+
 CREATE TRIGGER trg_track_recipe_changes
-AFTER UPDATE OR DELETE ON MachineRecipes
-FOR EACH ROW
-EXECUTE FUNCTION track_recipe_manipulation();
+    AFTER UPDATE OR DELETE ON public.MachineRecipes
+    FOR EACH ROW
+    EXECUTE FUNCTION track_recipe_manipulation();
+
+-- ====================================================================
+-- SÝMÜLASYON VE DOÐRULAMA ADIMLARI (Manuel test sorgularý)
+-- ====================================================================
+-- 1. Saldýrý Simülasyonu: 
+-- UPDATE public.MachineRecipes SET Value = 1800.0 WHERE ParameterName = 'TargetRpmLimit';
+--
+-- 2. SOC Panelinde Suçüstü Ýzleme:
+-- SELECT * FROM public.systemauditlogs ORDER BY logid DESC LIMIT 5;

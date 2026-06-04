@@ -49,9 +49,8 @@ public class CsvStreamingService
                 _logger.LogInformation("SCADA Verisi: Rüzgar {WindSpeed} m/s | Güç {Power} kW",
                                         telemetry.WindSpeed, telemetry.ActivePower);
 
-                // -------------------------------------------------------------
+                
                 // 2. SİBER AKIŞ (Threat Injection / Zar Atma Mekanizması)
-                // -------------------------------------------------------------
                 int dice = random.Next(1, 101); // 1 ile 100 arasında bir sayı tut
 
                 if (dice <= 2)
