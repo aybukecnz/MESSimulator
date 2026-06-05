@@ -40,3 +40,17 @@ Tüm verilerin izlendiği ve internete kapalı ağlarda bile bildirim gönderebi
 
 * **OT SOC Paneli:** Ekranın solunda canlı makine değerleri (Rüzgar/Sıcaklık), sağında ise gerçek zamanlı siber tehdit uyarıları (Kırmızı alarmlar, engellenen IP'ler).
 * **Offline Bildirim Sistemi:** Şirket internete kapalı (Air-gapped) olduğu için e-posta kullanılamadığından, sunucuya bağlı Fiziksel GSM Modem üzerinden çalışan .NET servisi ile kritik olaylarda (Örn: Reçete manipülasyonu) yöneticilere doğrudan SMS atılması.
+
+## Siber Güvenlik Kural Motoru (Security Rule Engine) Testi
+
+Sistem, ağ trafiğini anlık olarak dinler ve `AllowedAssets` (Güvenilir Cihazlar) listesinde bulunmayan bir MAC/IP eşleşmesi tespit ettiğinde talebi anında reddeder (400 Bad Request). 
+
+Bu ihlaller eşzamanlı olarak PostgreSQL veritabanındaki `activealerts` tablosuna SOC paneli için loglanır.
+
+**Saldırı Girişimi Engellemesi (Swagger API):**
+<img width="957" height="861" alt="swagger" src="https://github.com/user-attachments/assets/f1b0971a-0086-4f5d-8fd1-73a7df4f0ad4" />
+
+
+**PostgreSQL Olay Logu (pgAdmin):**
+<img width="1380" height="287" alt="unauthorized" src="https://github.com/user-attachments/assets/03ba414f-3784-431c-977e-9faa4cf27767" />
+
