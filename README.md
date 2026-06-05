@@ -23,7 +23,7 @@ Sistemin bel kemiği olan PostgreSQL, sadece depo değil, aynı zamanda ilk savu
 * **SQL Trigger'ları:** Aşırı kritik bir durum olduğunda (örn: Reçete değişimi) .NET'i beklemeden doğrudan veritabanı seviyesinde alarm flag'leri üretilmesi.
 
 ### Faz 3: .NET 9 Backend ve Temiz Mimari (OT SOC Kural Motoru)
-Sistemin beyni olan API, MES dokümanlarındaki teorik riskleri gerçek zamanlı olarak izler ve yakalar.
+Sistemin beyni olan API, MES'teki teorik riskleri gerçek zamanlı olarak izler ve yakalar.
 
 * **Veri Toplama (Data Acquisition) Koruması:** Saniyede 10 satır veri atan bir makineden saniyede 1000 satır veri gelirse DDoS / Sorgu Taşkını alarmı üretilir.
 * **Ağ ve Donanım (Network/Hardware) Koruması:** Sistemde daha önce hiç görülmemiş bir IP veya MAC adresi ağda veri çekmeye çalışırsa Gölge IT (Shadow IT) alarmı üretilir. Makine IP'leri birbiriyle konuşmaya çalışırsa Yatay Hareket (Lateral Movement) tespiti yapılır.

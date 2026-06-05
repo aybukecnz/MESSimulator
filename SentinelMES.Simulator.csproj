@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>dotnet-SentinelMES.Simulator-d07367e7-d6d3-4d52-852e-dacd945a0dd6</UserSecretsId>
+	  <DefaultItemExcludes>$(DefaultItemExcludes);SentinelMES.Application\**;SentinelMES.Domain\**;SentinelMES.Infrastructure\**;SentinelMES.WebAPI\**</DefaultItemExcludes>
   </PropertyGroup>
 
   <ItemGroup>
