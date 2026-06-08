@@ -19,10 +19,10 @@ public class AlertController : ControllerBase
     [HttpGet("active")]
     public async Task<IActionResult> GetActiveAlerts()
     {
-        // En son çıkan 50 aktif siber güvenlik alarmını getir
+        // En son çıkan 300 aktif siber güvenlik alarmını getir
         var alerts = await _context.ActiveAlerts
                                    .OrderByDescending(a => a.Timestamp)
-                                   .Take(50)
+                                   .Take(300)
                                    .ToListAsync();
         return Ok(alerts);
     }
@@ -30,10 +30,10 @@ public class AlertController : ControllerBase
     [HttpGet("audit-logs")]
     public async Task<IActionResult> GetAuditLogs()
     {
-        // En son 100 şüpheli işlemi (Brute-Force, Reçete manipülasyonu vb.) getir
+        // En son 300 şüpheli işlemi (Brute-Force, Reçete manipülasyonu vb.) getir
         var logs = await _context.SystemAuditLogs
                                  .OrderByDescending(l => l.Timestamp)
-                                 .Take(100)
+                                 .Take(300)
                                  .ToListAsync();
         return Ok(logs);
     }

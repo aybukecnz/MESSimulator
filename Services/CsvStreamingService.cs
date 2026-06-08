@@ -89,6 +89,21 @@ public class CsvStreamingService
                     }
                     _logger.LogCritical("SİBER TEHDİT: {Ip} adresinden Admin hesabına Brute-Force saldırısı!", attackerIp);
                 }
+                else if (dice > 6 && dice <= 10)
+                {
+                    // %4 İHTİMAL: SCADA Güç Değeri Manipülasyonu
+                    var log = new SystemAuditLog
+                    {
+                        Timestamp = DateTime.UtcNow,
+                        SourceIP = faker.Internet.Ip(),
+                        UserName = "Bilinmeyen_SCADA_Cihazı",
+                        ActionType = "SİBER_ŞÜPHE", // Arayüz bu kelimeyi arıyor!
+                        Status = "CRITICAL",
+                        Details = $"Anormal güç verisi (Spoofing) tespit edildi! Orijinal: {telemetry.ActivePower} kW, Gelen: {telemetry.ActivePower * 50} kW"
+                    };
+                    await _repository.InsertAuditLogAsync(log);
+                    _logger.LogWarning("SİBER TEHDİT: SCADA Güç Spoofing'i yakalandı!");
+                }
                 else if (dice <= 16)
                 {
                     // %10 İHTİMAL: Normal Operatör Girişi (Masum Hareket)
