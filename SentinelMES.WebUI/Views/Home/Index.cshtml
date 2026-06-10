@@ -1,0 +1,326 @@
+﻿@model List<SentinelMES.WebUI.Models.AlertViewModel>
+
+@{
+    ViewData["Title"] = "SOC Komuta Merkezi";
+}
+
+<style>
+    /* Ana Arka Planı Zorla Karanlık Yap */
+    body, html, main {
+        background-color: #0b0f19 !important;
+        color: #e2e8f0 !important;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    /* Layout'tan Gelen Beyaz Üst Menüyü (Navbar) Karanlık Yap */
+    header .navbar {
+        background-color: #111827 !important;
+        border-bottom: 1px solid #1f2937 !important;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    }
+
+    header .navbar-brand, header .nav-link {
+        color: #94a3b8 !important;
+        font-weight: 600;
+    }
+
+        header .navbar-brand:hover, header .nav-link:hover {
+            color: #60a5fa !important;
+        }
+
+    header .navbar .border-bottom {
+        border-bottom: none !important;
+    }
+
+    /* Kart Tasarımları */
+    .soc-card {
+        background-color: #111827;
+        border: 1px solid #1f2937;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    }
+
+    .soc-header {
+        background: linear-gradient(90deg, #1f2937 0%, #111827 100%);
+        border-bottom: 1px solid #374151;
+        border-radius: 12px 12px 0 0;
+    }
+
+    .stat-card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        border-radius: 12px;
+        border: none;
+    }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.7);
+        }
+
+    /* Tablolardaki Beyazlıkları Tamamen Ez (Force Dark Table) */
+    .table {
+        --bs-table-bg: transparent !important;
+        color: #cbd5e1 !important;
+        border-color: #1e293b !important;
+        margin-bottom: 0;
+    }
+
+        .table td, .table th {
+            background-color: #111827 !important;
+            color: #cbd5e1 !important;
+            border-bottom: 1px solid #1f2937 !important;
+            padding: 1.2rem 0.75rem;
+            vertical-align: middle;
+        }
+
+        .table tbody tr:hover td {
+            background-color: #1e293b !important;
+        }
+
+        .table thead th {
+            background-color: #1f2937 !important;
+            color: #94a3b8 !important;
+            border-bottom: 2px solid #374151 !important;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+        }
+
+    /* Sekme (Tab) Tasarımları */
+    .nav-pills .nav-link {
+        color: #94a3b8;
+        border-radius: 8px;
+        margin: 0 5px;
+        font-weight: 600;
+        transition: all 0.3s;
+        border: 1px solid transparent;
+    }
+
+        .nav-pills .nav-link:hover {
+            background-color: #1e293b;
+            color: #f8fafc;
+        }
+
+        .nav-pills .nav-link.active {
+            background-color: rgba(37, 99, 235, 0.1);
+            color: #60a5fa;
+            border: 1px solid #2563eb;
+            box-shadow: 0 0 15px rgba(37, 99, 235, 0.2);
+        }
+
+    /* Neon Rozetler */
+    .badge-cyber {
+        padding: 0.6em 0.9em;
+        border-radius: 6px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+
+    .badge-glow-red {
+        background-color: rgba(220, 38, 38, 0.1) !important;
+        border: 1px solid #dc2626 !important;
+        color: #ef4444 !important;
+        box-shadow: 0 0 10px rgba(220, 38, 38, 0.2);
+    }
+
+    .badge-glow-yellow {
+        background-color: rgba(217, 119, 6, 0.1) !important;
+        border: 1px solid #d97706 !important;
+        color: #f59e0b !important;
+        box-shadow: 0 0 10px rgba(217, 119, 6, 0.2);
+    }
+
+    .badge-glow-blue {
+        background-color: rgba(37, 99, 235, 0.1) !important;
+        border: 1px solid #2563eb !important;
+        color: #60a5fa !important;
+        box-shadow: 0 0 10px rgba(37, 99, 235, 0.2);
+    }
+
+    /* Özel Kaydırma Çubuğu (Scrollbar) */
+    ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: #0b0f19;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: #374151;
+        border-radius: 4px;
+    }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4b5563;
+        }
+</style>
+
+<div class="container-fluid mt-4 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-white fw-bold mb-0"><i class="bi bi-radar text-primary"></i> Sentinel-MES SOC</h2>
+            <small class="text-muted">Merkezi Siber Operasyon & Tehdit İstihbarat Ekranı</small>
+        </div>
+        <div class="d-flex gap-3 align-items-center">
+            <span class="badge bg-success badge-cyber d-flex align-items-center px-3 py-2 fs-6">
+                <span class="spinner-grow spinner-grow-sm me-2 text-light" role="status" aria-hidden="true"></span> Sistem Çevrimiçi
+            </span>
+            <button class="btn btn-primary fw-bold px-4" onclick="location.reload();">
+                <i class="bi bi-arrow-clockwise me-1"></i> Paneli Yenile
+            </button>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card stat-card" style="background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);">
+                <div class="card-body p-4 d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-uppercase text-blue-200 small fw-bold mb-1" style="color: #bfdbfe;">Ağ Trafiği Durumu</h6>
+                        <h3 class="text-white fw-bold mb-0">Canlı İzleme</h3>
+                    </div>
+                    <i class="bi bi-activity text-white opacity-50" style="font-size: 3rem;"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card stat-card" style="background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%);">
+                <div class="card-body p-4 d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-uppercase small fw-bold mb-1" style="color: #fca5a5;">Sistemdeki Toplam Tehdit</h6>
+                        <h3 class="text-white fw-bold mb-0">@Model.Count <small class="fs-6 fw-normal">olay engellendi</small></h3>
+                    </div>
+                    <i class="bi bi-shield-x text-white opacity-50" style="font-size: 3rem;"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card stat-card" style="background: linear-gradient(135deg, #78350f 0%, #92400e 100%);">
+                <div class="card-body p-4 d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-uppercase small fw-bold mb-1" style="color: #fcd34d;">Aktif Güvenlik Kuralı</h6>
+                        <h3 class="text-white fw-bold mb-0">Zero-Trust Mimarisi</h3>
+                    </div>
+                    <i class="bi bi-fingerprint text-white opacity-50" style="font-size: 3rem;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="soc-card mt-5">
+        <div class="soc-header p-3">
+            <ul class="nav nav-pills" id="socTabs" role="tablist">
+                <li class="nav-item flex-fill text-center" role="presentation">
+                    <button class="nav-link active py-3" data-bs-toggle="tab" data-bs-target="#network" type="button" role="tab">
+                        <i class="bi bi-hdd-network"></i> Ağ İhlalleri (Dış Tehditler)
+                    </button>
+                </li>
+                <li class="nav-item flex-fill text-center" role="presentation">
+                    <button class="nav-link py-3" data-bs-toggle="tab" data-bs-target="#scada" type="button" role="tab">
+                        <i class="bi bi-lightning-charge"></i> SCADA Anomalileri
+                    </button>
+                </li>
+                <li class="nav-item flex-fill text-center" role="presentation">
+                    <button class="nav-link py-3" data-bs-toggle="tab" data-bs-target="#insider" type="button" role="tab">
+                        <i class="bi bi-incognito"></i> Kimlik & İç Tehditler
+                    </button>
+                </li>
+            </ul>
+        </div>
+
+        <div class="card-body p-0">
+            <div class="tab-content" id="socTabsContent">
+
+                <div class="tab-pane fade show active" id="network" role="tabpanel">
+                    <div class="table-responsive" style="max-height: 550px;">
+                        <table class="table table-dark-custom mb-0">
+                            <thead class="sticky-top">
+                                <tr>
+                                    <th style="width: 10%; padding-left: 1.5rem;">Olay ID</th>
+                                    <th style="width: 15%;">Zaman Damgası</th>
+                                    <th style="width: 20%;">Tehdit Vektörü</th>
+                                    <th style="width: 10%;">Seviye</th>
+                                    <th>İstihbarat Raporu</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var alert in Model.Where(a => a.AlertType == "UNAUTHORIZED_IP_ACCESS"))
+                                {
+                                    <tr>
+                                        <td class="text-muted fw-bold" style="padding-left: 1.5rem;">#@alert.AlertId</td>
+                                        <td class="text-secondary font-monospace">@alert.Timestamp.ToString("HH:mm:ss | dd.MM.yyyy")</td>
+                                        <td><span class="badge-cyber badge-glow-blue">@alert.AlertType</span></td>
+                                        <td><span class="badge-cyber badge-glow-red">CRITICAL</span></td>
+                                        <td class="text-light">@alert.Message</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="scada" role="tabpanel">
+                    <div class="table-responsive" style="max-height: 550px;">
+                        <table class="table table-dark-custom mb-0">
+                            <thead class="sticky-top">
+                                <tr>
+                                    <th style="width: 10%; padding-left: 1.5rem;">Olay ID</th>
+                                    <th style="width: 15%;">Zaman Damgası</th>
+                                    <th style="width: 20%;">Telemetri Tehdidi</th>
+                                    <th style="width: 10%;">Seviye</th>
+                                    <th>Sistem Analizi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var alert in Model.Where(a => a.AlertType == "OPERASYONEL_ANOMALI" || a.AlertType == "SİBER_ŞÜPHE"))
+                                {
+                                    <tr>
+                                        <td class="text-muted fw-bold" style="padding-left: 1.5rem;">#@alert.AlertId</td>
+                                        <td class="text-secondary font-monospace">@alert.Timestamp.ToString("HH:mm:ss | dd.MM.yyyy")</td>
+                                        <td><span class="badge-cyber badge-glow-yellow">@alert.AlertType</span></td>
+                                        <td><span class="badge-cyber badge-glow-red">CRITICAL</span></td>
+                                        <td class="text-warning">@alert.Message</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="insider" role="tabpanel">
+                    <div class="table-responsive" style="max-height: 550px;">
+                        <table class="table table-dark-custom mb-0">
+                            <thead class="sticky-top">
+                                <tr>
+                                    <th style="width: 10%; padding-left: 1.5rem;">Olay ID</th>
+                                    <th style="width: 15%;">Zaman Damgası</th>
+                                    <th style="width: 20%;">İhlal Türü</th>
+                                    <th style="width: 10%;">Seviye</th>
+                                    <th>Hedef & Kullanıcı Detayı</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var alert in Model.Where(a => a.AlertType != "UNAUTHORIZED_IP_ACCESS" && a.AlertType != "OPERASYONEL_ANOMALI" && a.AlertType != "SİBER_ŞÜPHE"))
+                                {
+                                    <tr>
+                                        <td class="text-muted fw-bold" style="padding-left: 1.5rem;">#@alert.AlertId</td>
+                                        <td class="text-secondary font-monospace">@alert.Timestamp.ToString("HH:mm:ss | dd.MM.yyyy")</td>
+                                        <td><span class="badge-cyber badge-glow-blue text-info">@alert.AlertType</span></td>
+                                        <td><span class="badge-cyber badge-glow-red">@alert.Severity</span></td>
+                                        <td class="text-light">@alert.Message</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">

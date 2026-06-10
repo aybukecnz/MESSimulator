@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.14.37111.16
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SentinelMES.Simulator", "SentinelMES.Simulator.csproj", "{5CE0F225-5CDA-E482-38C8-960C1F47FCBB}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SentinelMES.Domain", "SentinelMES.Domain\SentinelMES.Domain.csproj", "{C584DFD5-5C24-48B8-9796-F40134416EAD}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SentinelMES.Application", "SentinelMES.Application\SentinelMES.Application.csproj", "{B497F08A-46D6-48CA-A089-05B08E02D355}"
@@ -13,7 +11,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SentinelMES.Infrastructure"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SentinelMES.WebAPI", "SentinelMES.WebAPI\SentinelMES.WebAPI.csproj", "{568B8296-4899-49B5-8807-5FB32110206E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SentinelMES.WebUI", "..\SentinelMES.WebUI\SentinelMES.WebUI.csproj", "{8073F0F7-ECC8-481F-9257-C9DB1AA01111}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SentinelMES.WebUI", "SentinelMES.WebUI\SentinelMES.WebUI.csproj", "{373D0F1F-02C0-E968-7232-A2126F895643}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SentinelMES.Simulator", "SentineIMES.Simulator\SentinelMES.Simulator.csproj", "{AD4160BC-3AEF-8909-C786-60F4493AC432}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,10 +21,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{5CE0F225-5CDA-E482-38C8-960C1F47FCBB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{5CE0F225-5CDA-E482-38C8-960C1F47FCBB}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{5CE0F225-5CDA-E482-38C8-960C1F47FCBB}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{5CE0F225-5CDA-E482-38C8-960C1F47FCBB}.Release|Any CPU.Build.0 = Release|Any CPU
 		{C584DFD5-5C24-48B8-9796-F40134416EAD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C584DFD5-5C24-48B8-9796-F40134416EAD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C584DFD5-5C24-48B8-9796-F40134416EAD}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -41,10 +37,14 @@ Global
 		{568B8296-4899-49B5-8807-5FB32110206E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{568B8296-4899-49B5-8807-5FB32110206E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{568B8296-4899-49B5-8807-5FB32110206E}.Release|Any CPU.Build.0 = Release|Any CPU
-		{8073F0F7-ECC8-481F-9257-C9DB1AA01111}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8073F0F7-ECC8-481F-9257-C9DB1AA01111}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{8073F0F7-ECC8-481F-9257-C9DB1AA01111}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{8073F0F7-ECC8-481F-9257-C9DB1AA01111}.Release|Any CPU.Build.0 = Release|Any CPU
+		{373D0F1F-02C0-E968-7232-A2126F895643}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{373D0F1F-02C0-E968-7232-A2126F895643}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{373D0F1F-02C0-E968-7232-A2126F895643}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{373D0F1F-02C0-E968-7232-A2126F895643}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AD4160BC-3AEF-8909-C786-60F4493AC432}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AD4160BC-3AEF-8909-C786-60F4493AC432}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AD4160BC-3AEF-8909-C786-60F4493AC432}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AD4160BC-3AEF-8909-C786-60F4493AC432}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
