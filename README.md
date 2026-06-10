@@ -71,7 +71,7 @@ Proje, geleneksel monolitik bir yapı yerine bağımlılıkları en aza indiren 
 
 ##  Sistem Mimari Diyagramı
 
-(Docs/db.drawio.png)
+<img width="1228" height="954" alt="db drawio" src="https://github.com/user-attachments/assets/79d71880-172e-4e8f-93ce-a27f743f36c5" />
 
 
 ---
