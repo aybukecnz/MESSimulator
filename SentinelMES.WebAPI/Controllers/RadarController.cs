@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using SentinelMES.Infrastructure.Persistence;
+using SentinelMES.Infrastructure.Persistence; // Kendi projendeki doğru klasör olduğuna emin ol
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -21,15 +21,15 @@ namespace SentinelIMES.WebAPI.Controllers
         [HttpGet("live-threats")]
         public async Task<IActionResult> GetLiveThreats()
         {
-            // Kural motorunu (FirewallPolicies) geçici olarak devre dışı bıraktık.
-            // Doğrudan veritabanındaki son 5 siber olayı (Ülkesi olanları) çekiyoruz:
             var recentThreats = await _context.SystemAuditLogs
                 .Where(log => log.CountryCode != null && log.CountryCode != "")
+                // SADECE GERÇEK SİBER TEHDİTLER RADARA DÜŞSÜN:
+                .Where(log => log.ActionType == "DDOS_ATTACK" || log.ActionType == "PORT_SCAN" || log.ActionType == "INSIDER_THREAT")
                 .OrderByDescending(log => log.Timestamp)
                 .Take(5)
-                .Select(static log => new
+                .Select(log => new
                 {
-                    ip = log.SourceIp, // Modelinde adı SourceIp ise onu yaz (altı kırmızı çizilmesin yeter)
+                    ip = log.SourceIp, // DİKKAT: Veritabanı modeline uygun olarak "SourceIp" yapıldı!
                     countryName = log.CountryName,
                     countryCode = log.CountryCode,
                     attackType = log.ActionType,

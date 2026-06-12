@@ -229,7 +229,10 @@
                 <div class="card-body p-4 d-flex justify-content-between align-items-center">
                     <div>
                         <h6 class="text-uppercase small fw-bold mb-1" style="color: #fca5a5;">Sistemdeki Toplam Tehdit</h6>
-                        <h3 class="text-white fw-bold mb-0">@Model.Count <small class="fs-6 fw-normal">olay engellendi</small></h3>
+                        <h3 class="text-white fw-bold mb-0">
+                            <span id="total-threats-count">@Model.Count</span>
+                            <small class="fs-6 fw-normal">olay engellendi</small>
+                        </h3>
                     </div>
                     <i class="bi bi-shield-x text-white opacity-50" style="font-size: 3rem;"></i>
                 </div>
@@ -255,7 +258,6 @@
         </div>
 
         <div class="card-body p-0 d-flex" style="background-color: #020617; overflow: hidden; min-height: 350px;">
-
             <div class="col-md-7 d-flex justify-content-center align-items-center border-end p-4" style="border-color: #1e293b !important; position: relative;">
                 <div style="width: 100%; height: 300px;">
                     <canvas id="threatChart"></canvas>
@@ -268,14 +270,11 @@
                     <i class="bi bi-shield-exclamation text-danger"></i> Son Engellenen Tehditler (Live)
                 </h6>
                 <div id="radarLogStream" class="d-flex flex-column" style="max-height: 280px; overflow-y: auto;">
-                    <div class="text-muted text-center mt-5">Sistem dinleniyor... Bekleniyor.</div>
+                    <div class="text-muted text-center mt-5" id="waiting-text">Sistem dinleniyor... Bekleniyor.</div>
                 </div>
             </div>
-
         </div>
     </div>
-
-
 
     <div class="soc-card mt-5">
         <div class="soc-header p-3">
@@ -314,7 +313,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach (var alert in Model.Where(a => a.AlertType == "UNAUTHORIZED_IP_ACCESS"))
+                                @foreach (var alert in Model.Where(a => a.AlertType == "DDOS_ATTACK" || a.AlertType == "UNAUTHORIZED_IP_ACCESS"))
                                 {
                                     <tr>
                                         <td class="text-muted fw-bold" style="padding-left: 1.5rem;">#@alert.AlertId</td>
@@ -342,7 +341,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach (var alert in Model.Where(a => a.AlertType == "OPERASYONEL_ANOMALI" || a.AlertType == "SİBER_ŞÜPHE"))
+                                @foreach (var alert in Model.Where(a => a.AlertType == "PORT_SCAN" || a.AlertType == "OPERASYONEL_ANOMALI" || a.AlertType == "SİBER_ŞÜPHE"))
                                 {
                                     <tr>
                                         <td class="text-muted fw-bold" style="padding-left: 1.5rem;">#@alert.AlertId</td>
@@ -370,7 +369,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach (var alert in Model.Where(a => a.AlertType != "UNAUTHORIZED_IP_ACCESS" && a.AlertType != "OPERASYONEL_ANOMALI" && a.AlertType != "SİBER_ŞÜPHE"))
+                                @foreach (var alert in Model.Where(a => a.AlertType == "INSIDER_THREAT" || a.AlertType == "LOGIN_SUCCESS"))
                                 {
                                     <tr>
                                         <td class="text-muted fw-bold" style="padding-left: 1.5rem;">#@alert.AlertId</td>
@@ -446,21 +445,18 @@
                     const threats = await response.json();
 
                     const logStream = document.getElementById('radarLogStream');
+                    const waitingText = document.getElementById('waiting-text');
 
                     // Veri geldiyse "Bekleniyor" yazısını temizle
-                    if (threats.length > 0 && logStream.innerHTML.includes("Bekleniyor")) {
-                        logStream.innerHTML = '';
+                    if (threats.length > 0 && waitingText) {
+                        waitingText.remove();
                     }
 
                     // Grafik için ülke sayısını tutan sözlük
                     let countryCounts = { 'Russia': 0, 'China': 0, 'North Korea': 0, 'Iran': 0, 'Turkey': 0 };
 
-                    // Sadece yeni gelen logları eklemek için ekranı temizliyoruz (veya üstüne ekleyebilirsin)
-                    logStream.innerHTML = '';
-
-                    // 3. API'den gelen gerçek verileri UI'a bas
+                    // 3. API'den gelen gerçek verileri UI'a bas (Listenin en üstüne ekle)
                     threats.forEach(t => {
-                        // Log ekranına HTML olarak ekle
                         const logDiv = document.createElement('div');
                         logDiv.className = 'log-item-enter p-3 rounded text-light mb-2';
                         logDiv.style.backgroundColor = 'rgba(15, 23, 42, 0.8)';
@@ -474,7 +470,14 @@
                             <div>Connection dropped from <b class="text-warning">${t.countryName} (${t.countryCode})</b></div>
                             <div class="small mt-1 text-secondary">IP: ${t.ip} | Rule: <span class="text-info">${t.attackType}</span></div>
                         `;
-                        logStream.appendChild(logDiv);
+
+                        // Yeni gelen veriyi her zaman en üste ekle
+                        logStream.prepend(logDiv);
+
+                        // Liste çok uzamasın ve sistemi yormasın diye 50 satırı aşarsa en eskisini sil
+                        if (logStream.children.length > 50) {
+                            logStream.removeChild(logStream.lastChild);
+                        }
 
                         // Grafik için gelen ülkenin sayısını artır
                         if(countryCounts[t.countryName] !== undefined) {
