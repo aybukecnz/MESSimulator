@@ -19,6 +19,15 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="Scripts\Friday-WorkingHours-Afternoon-DDos.pcap_ISCX.csv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Scripts\Friday-WorkingHours-Afternoon-PortScan.pcap_ISCX.csv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Scripts\Monday-WorkingHours.pcap_ISCX.csv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="wind_turbine_scada.csv">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

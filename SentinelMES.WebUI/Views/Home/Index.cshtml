@@ -32,6 +32,44 @@
         border-bottom: none !important;
     }
 
+    /* Animasyonlar */
+    .log-item-enter {
+        animation: slideIn 0.3s ease-out forwards;
+        border-left: 3px solid #ef4444;
+        background: rgba(220, 38, 38, 0.1);
+        margin-bottom: 0.5rem;
+    }
+
+    @@keyframes slideIn {
+        from {
+            transform: translateX(20px);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    @@keyframes opacityPulse {
+        0% {
+            opacity: 0.5;
+        }
+
+        50% {
+            opacity: 1;
+        }
+
+        100% {
+            opacity: 0.5;
+        }
+    }
+
+    .pulse-text {
+        animation: opacityPulse 2s infinite;
+    }
+
     /* Kart Tasarımları */
     .soc-card {
         background-color: #111827;
@@ -210,6 +248,35 @@
         </div>
     </div>
 
+    <div class="card soc-card mt-2 mb-4" style="border-color: #0c4a6e;">
+        <div class="card-header d-flex justify-content-between align-items-center" style="background-color: #082f49; border-bottom: 1px solid #0c4a6e; border-radius: 12px 12px 0 0;">
+            <span class="text-info fw-bold"><i class="bi bi-geo-alt"></i> Canlı Siber Tehdit Radarı (Geo-IP)</span>
+            <span class="badge bg-dark border border-info text-info pulse-text">SİSTEM AKTİF</span>
+        </div>
+
+        <div class="card-body p-0 d-flex" style="background-color: #020617; overflow: hidden; min-height: 350px;">
+
+            <div class="col-md-7 d-flex justify-content-center align-items-center border-end p-4" style="border-color: #1e293b !important; position: relative;">
+                <div style="width: 100%; height: 300px;">
+                    <canvas id="threatChart"></canvas>
+                </div>
+                <div style="position: absolute; width: 100%; height: 100%; background: radial-gradient(circle, transparent 20%, rgba(2, 6, 23, 0.8) 80%); pointer-events: none;"></div>
+            </div>
+
+            <div class="col-md-5 p-4" style="font-family: monospace; font-size: 0.85rem; color: #38bdf8;">
+                <h6 class="text-white border-bottom border-secondary pb-2 mb-3">
+                    <i class="bi bi-shield-exclamation text-danger"></i> Son Engellenen Tehditler (Live)
+                </h6>
+                <div id="radarLogStream" class="d-flex flex-column" style="max-height: 280px; overflow-y: auto;">
+                    <div class="text-muted text-center mt-5">Sistem dinleniyor... Bekleniyor.</div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
+
     <div class="soc-card mt-5">
         <div class="soc-header p-3">
             <ul class="nav nav-pills" id="socTabs" role="tablist">
@@ -324,3 +391,117 @@
 </div>
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+
+            // 1. Chart.js Grafik Ayarları (Polar Area Chart)
+            const ctx = document.getElementById('threatChart').getContext('2d');
+            const threatChart = new Chart(ctx, {
+                type: 'polarArea',
+                data: {
+                    labels: ['Russia', 'China', 'North Korea', 'Iran', 'Turkey'],
+                    datasets: [{
+                        label: 'Siber Saldırı Yoğunluğu',
+                        data: [0, 0, 0, 0, 0], // İlk başta veriler sıfır, API dolduracak
+                        backgroundColor: [
+                            'rgba(220, 38, 38, 0.7)',  // Red - Russia
+                            'rgba(217, 119, 6, 0.7)',  // Orange - China
+                            'rgba(147, 51, 234, 0.7)', // Purple - North Korea
+                            'rgba(234, 179, 8, 0.7)',  // Yellow - Iran
+                            'rgba(34, 197, 94, 0.7)'   // Green - Turkey (İç Tehditler)
+                        ],
+                        borderColor: 'rgba(2, 6, 23, 1)', // Arka planla uyumlu koyu çizgi
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            grid: { color: 'rgba(56, 189, 248, 0.2)' }, // Radara benzeyen mavi ızgara
+                            ticks: { display: false } // Rakamları gizle
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: { color: '#cbd5e1', font: { family: 'monospace', size: 12 } }
+                        }
+                    }
+                }
+            });
+
+            // 2. WebAPI'den Canlı Veri Çekme Motoru
+            async function fetchLiveThreats() {
+                try {
+                    // API isteğini atıyoruz (RadarController.cs içindeki metoda gider)
+                    const response = await fetch('https://localhost:5001/api/Radar/live-threats');
+                    if (!response.ok) return;
+
+                    const threats = await response.json();
+
+                    const logStream = document.getElementById('radarLogStream');
+
+                    // Veri geldiyse "Bekleniyor" yazısını temizle
+                    if (threats.length > 0 && logStream.innerHTML.includes("Bekleniyor")) {
+                        logStream.innerHTML = '';
+                    }
+
+                    // Grafik için ülke sayısını tutan sözlük
+                    let countryCounts = { 'Russia': 0, 'China': 0, 'North Korea': 0, 'Iran': 0, 'Turkey': 0 };
+
+                    // Sadece yeni gelen logları eklemek için ekranı temizliyoruz (veya üstüne ekleyebilirsin)
+                    logStream.innerHTML = '';
+
+                    // 3. API'den gelen gerçek verileri UI'a bas
+                    threats.forEach(t => {
+                        // Log ekranına HTML olarak ekle
+                        const logDiv = document.createElement('div');
+                        logDiv.className = 'log-item-enter p-3 rounded text-light mb-2';
+                        logDiv.style.backgroundColor = 'rgba(15, 23, 42, 0.8)';
+                        logDiv.style.borderLeft = '4px solid #ef4444';
+
+                        logDiv.innerHTML = `
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="text-danger fw-bold"><i class="bi bi-shield-x"></i> [ENGELLEME]</span>
+                                <span class="text-muted small">${t.time}</span>
+                            </div>
+                            <div>Connection dropped from <b class="text-warning">${t.countryName} (${t.countryCode})</b></div>
+                            <div class="small mt-1 text-secondary">IP: ${t.ip} | Rule: <span class="text-info">${t.attackType}</span></div>
+                        `;
+                        logStream.appendChild(logDiv);
+
+                        // Grafik için gelen ülkenin sayısını artır
+                        if(countryCounts[t.countryName] !== undefined) {
+                            countryCounts[t.countryName]++;
+                        }
+                    });
+
+                    // 4. Grafiği (Chart.js) Canlı Olarak Güncelle
+                    threatChart.data.datasets[0].data = [
+                        countryCounts['Russia'],
+                        countryCounts['China'],
+                        countryCounts['North Korea'],
+                        countryCounts['Iran'],
+                        countryCounts['Turkey']
+                    ];
+                    threatChart.update();
+
+                } catch (error) {
+                    console.error("API'den veri çekilirken hata:", error);
+                }
+            }
+
+            // Her 3 saniyede bir WebAPI'ye gidip güncel siber tehditleri sor
+            setInterval(fetchLiveThreats, 3000);
+
+            // Sayfa açılır açılmaz ilk isteği at
+            fetchLiveThreats();
+        });
+    </script>
+}

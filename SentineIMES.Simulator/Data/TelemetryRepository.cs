@@ -27,8 +27,8 @@ public class TelemetryRepository
     public async Task InsertAuditLogAsync(SystemAuditLog log)
     {
         using var connection = new NpgsqlConnection(_connectionString);
-        var sql = @"INSERT INTO SystemAuditLogs (Timestamp, SourceIP, UserName, ActionType, Status, Details)
-                    VALUES (@Timestamp, @SourceIP, @UserName, @ActionType, @Status, @Details)";
+        var sql = @"INSERT INTO ""systemauditlogs"" (""timestamp"", ""sourceip"", ""username"", ""actiontype"", ""status"", ""details"",""CountryCode"",""CountryName"")
+                    VALUES (@Timestamp, @SourceIP, @UserName, @ActionType, @Status, @Details, @CountryCode, @CountryName)";
 
         await connection.ExecuteAsync(sql, log);
     }

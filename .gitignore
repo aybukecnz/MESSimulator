@@ -6,6 +6,12 @@
 # dotenv files
 .env
 
+*.csv
+*.zip
+bin/
+obj/
+.vs/
+
 appsettings.Development.json
 
 # User-specific files

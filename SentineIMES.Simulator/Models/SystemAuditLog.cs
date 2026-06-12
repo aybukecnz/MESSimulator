@@ -14,5 +14,8 @@ public class SystemAuditLog
     public required string UserName { get; set; }
     public required string ActionType { get; set; }
     public required string Status { get; set; }
+    public required string CountryName { get; set; }
+    public required string CountryCode { get; set; }
+
     public required string Details { get; set; }
 }

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using SentinelMES.Infrastructure.Persistence;
@@ -11,9 +12,11 @@ using SentinelMES.Infrastructure.Persistence;
 namespace SentinelMES.Infrastructure.Migrations
 {
     [DbContext(typeof(SentinelDbContext))]
-    partial class SentinelDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260611100231_AddGeoIpToAuditLogs")]
+    partial class AddGeoIpToAuditLogs
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -138,9 +141,11 @@ namespace SentinelMES.Infrastructure.Migrations
                         .HasColumnName("actiontype");
 
                     b.Property<string>("CountryCode")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("CountryName")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Details")
@@ -162,7 +167,7 @@ namespace SentinelMES.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("timestamp");
 
-                    b.Property<string>("UserName")
+                    b.Property<string>("Username")
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("username");

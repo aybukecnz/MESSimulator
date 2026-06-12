@@ -48,18 +48,27 @@ public class Worker : BackgroundService
 
     private async Task SimulateCyberAttack()
     {
-        // DİKKAT: Her döngüde YEPYENİ bir IP ve MAC adresi üretmek için 
-        // zar atma işlemini tam olarak bu metodun içine (döngünün kalbine) koyuyoruz!
         string randomIp = _faker.Internet.Ip();
         string randomMac = _faker.Internet.Mac();
+
+        // SİBER İSTİHBARAT: Worker da artık yasaklı ülkelerden saldıracak!
+        var threatCountries = new[] {
+            new { Code = "RU", Name = "Russia" },
+            new { Code = "CN", Name = "China" },
+            new { Code = "KP", Name = "North Korea" },
+            new { Code = "IR", Name = "Iran" }
+        };
+        var attackerGeo = _faker.PickRandom(threatCountries);
 
         var maliciousPacket = new
         {
             IpAddress = randomIp,
             MacAddress = randomMac,
             Username = "hacker_bot",
-            ActionType = "PORT_SCAN", // Ekranında Ağ İhlalleri kategorisinde şık durması için
-            Details = "Sisteme yetkisiz bağlantı ve port tarama girişimi."
+            ActionType = "PORT_SCAN",
+            Details = "Sisteme yetkisiz bağlantı ve port tarama girişimi.",
+            CountryCode = attackerGeo.Code,  // EKLENDİ!
+            CountryName = attackerGeo.Name   // EKLENDİ!
         };
 
         try
@@ -68,13 +77,12 @@ public class Worker : BackgroundService
 
             if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
             {
-                // Yakalanan IP adresini siyah ekranda da gösterelim
-                _logger.LogWarning("[!] SALDIRI YAKALANDI: API, {Ip} adresinden gelen sahte trafiği engelledi!", randomIp);
+                _logger.LogWarning("[!] SALDIRI YAKALANDI: API, {Ip} ({Country}) adresinden gelen sahte trafiği engelledi!", randomIp, attackerGeo.Code);
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError("API'ye ulaşılamadı. Lütfen WebAPI projesinin çalıştığından emin olun. Hata: {msg}", ex.Message);
+            _logger.LogError("API'ye ulaşılamadı. Hata: {msg}", ex.Message);
         }
     }
 }
