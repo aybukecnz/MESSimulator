@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using SentinelIMES.Domain.Entities;
 using SentinelMES.Domain.Entities;
 
 namespace SentinelMES.Infrastructure.Persistence;
@@ -12,7 +13,7 @@ public class SentinelDbContext : DbContext
     public DbSet<SystemAuditLog> SystemAuditLogs { get; set; }
     public DbSet<ActiveAlert> ActiveAlerts { get; set; }
     public DbSet<AllowedAsset> AllowedAssets { get; set; }
-
+    public DbSet<FirewallPolicy> FirewallPolicies { get; set; }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -25,7 +26,7 @@ public class SentinelDbContext : DbContext
             entity.Property(e => e.LogId).HasColumnName("logid");
             entity.Property(e => e.Timestamp).HasColumnName("timestamp");
             entity.Property(e => e.SourceIp).HasColumnName("sourceip");
-            entity.Property(e => e.Username).HasColumnName("username");
+            entity.Property(e => e.UserName).HasColumnName("username");
             entity.Property(e => e.ActionType).HasColumnName("actiontype");
             entity.Property(e => e.Status).HasColumnName("status");
             entity.Property(e => e.Details).HasColumnName("details");

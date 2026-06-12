@@ -4,7 +4,11 @@ using System.Globalization;
 using SentinelMES.Simulator.Models;
 using SentinelMES.Simulator.Data;
 using Microsoft.Extensions.Logging;
-using Bogus; // Siber logları üretmek için ekledik
+using Bogus;
+using System;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace SentinelMES.Simulator.Services;
 
@@ -31,49 +35,57 @@ public class CsvStreamingService
         using var csv = new CsvReader(reader, config);
         csv.Context.RegisterClassMap<TelemetryMap>();
 
-        _logger.LogInformation("Kaggle CSV dosyasından canlı veri akışı başlatılıyor...");
+        _logger.LogInformation("Kaggle SCADA dosyasından canlı fiziksel veri akışı başlatılıyor...");
 
-        // Sahte veri üretici motorumuz (Türkçe isimler için 'tr' lokasyonu)
         var faker = new Faker("tr");
         var random = new Random();
+
+        //  SİBER İSTİHBARAT: Dışarıdan gelecek saldırılar için yasaklı ülke havuzu
+        var threatCountries = new[] {
+            ("RU", "Russia"),
+            ("CN", "China"),
+            ("IR", "Iran"),
+            ("KP", "North Korea")
+        };
 
         while (await csv.ReadAsync() && !stoppingToken.IsCancellationRequested)
         {
             try
             {
-                // 1. FİZİKSEL AKIŞ (Masum Kısım - Makineler Çalışıyor)
+                // 1. FİZİKSEL AKIŞ (Makineler Çalışıyor)
                 var telemetry = csv.GetRecord<MachineTelemetry>();
-                telemetry.Timestamp = DateTime.UtcNow; // Zamanı şu an yap
+                telemetry.Timestamp = DateTime.UtcNow;
                 await _repository.InsertTelemetryAsync(telemetry);
 
                 _logger.LogInformation("SCADA Verisi: Rüzgar {WindSpeed} m/s | Güç {Power} kW",
                                         telemetry.WindSpeed, telemetry.ActivePower);
 
-                
-                // 2. SİBER AKIŞ (Threat Injection / Zar Atma Mekanizması)
-                int dice = random.Next(1, 101); // 1 ile 100 arasında bir sayı tut
+                // 2. SİBER AKIŞ (Threat Injection & Data Enrichment)
+                int dice = random.Next(1, 101);
 
                 if (dice <= 2)
                 {
-                    // %2 İHTİMAL: İç Tehdit (Reçete Manipülasyonu)
+                    // %2 İHTİMAL: İç Tehdit (Lateral Movement) - Yerel Ağdan Geldiği İçin Türkiye (TR)
                     var log = new SystemAuditLog
                     {
                         Timestamp = DateTime.UtcNow,
-                        SourceIP = "192.168.1.15", // Fabrika içi (Lateral) bir IP
+                        SourceIP = "192.168.1.15",
                         UserName = faker.Internet.UserName(),
                         ActionType = "UPDATE_RECIPE",
                         Status = "SUCCESS",
-                        Details = "KRİTİK: Laminasyon sıcaklık reçetesi izinsiz olarak 150C'den 250C'ye yükseltildi!"
+                        Details = "KRİTİK: Laminasyon sıcaklık reçetesi izinsiz olarak 150C'den 250C'ye yükseltildi!",
+                        CountryCode = "TR",         
+                        CountryName = "Turkey"      
                     };
                     await _repository.InsertAuditLogAsync(log);
-                    _logger.LogWarning("SİBER TEHDİT: Reçete Manipülasyonu tespit edildi (İç Tehdit)!");
+                    _logger.LogWarning("SİBER TEHDİT: Reçete Manipülasyonu (İç Tehdit)!");
                 }
                 else if (dice <= 6)
                 {
-                    // %4 İHTİMAL: Kaba Kuvvet (Brute Force) Saldırısı
-                    string attackerIp = faker.Internet.Ip(); // Dışarıdan rastgele bir IP
+                    // %4 İHTİMAL: Kaba Kuvvet (Brute Force) Saldırısı - Dışarıdan Geliyor
+                    string attackerIp = faker.Internet.Ip();
+                    var attackerGeo = faker.PickRandom(threatCountries); // Rastgele yasaklı ülke seç
 
-                    // Saniyeler içinde 15 defa hatalı şifre girildiğini simüle ediyoruz
                     for (int i = 0; i < 15; i++)
                     {
                         var log = new SystemAuditLog
@@ -83,49 +95,55 @@ public class CsvStreamingService
                             UserName = "Admin",
                             ActionType = "LOGIN_ATTEMPT",
                             Status = "FAILED",
-                            Details = "Hatalı şifre denemesi."
+                            Details = "Hatalı şifre denemesi.",
+                            CountryCode = attackerGeo.Item1,  // "RU"
+                            CountryName = attackerGeo.Item2   // "Russia"
                         };
                         await _repository.InsertAuditLogAsync(log);
                     }
-                    _logger.LogCritical("SİBER TEHDİT: {Ip} adresinden Admin hesabına Brute-Force saldırısı!", attackerIp);
+                    _logger.LogCritical("SİBER TEHDİT: {Ip} ({Country}) adresinden Brute-Force saldırısı!", attackerIp, attackerGeo.Item1);
                 }
                 else if (dice > 6 && dice <= 10)
                 {
-                    // %4 İHTİMAL: SCADA Güç Değeri Manipülasyonu
+                    // %4 İHTİMAL: SCADA Güç Değeri Manipülasyonu (Spoofing)
+                    var attackerGeo = faker.PickRandom(threatCountries);
+
                     var log = new SystemAuditLog
                     {
                         Timestamp = DateTime.UtcNow,
                         SourceIP = faker.Internet.Ip(),
                         UserName = "Bilinmeyen_SCADA_Cihazı",
-                        ActionType = "SİBER_ŞÜPHE", // Arayüz bu kelimeyi arıyor!
+                        ActionType = "SİBER_ŞÜPHE",
                         Status = "CRITICAL",
-                        Details = $"Anormal güç verisi (Spoofing) tespit edildi! Orijinal: {telemetry.ActivePower} kW, Gelen: {telemetry.ActivePower * 50} kW"
+                        Details = $"Anormal güç verisi (Spoofing) tespit edildi! Orijinal: {telemetry.ActivePower} kW",
+                        CountryCode = attackerGeo.Item1,
+                        CountryName = attackerGeo.Item2
                     };
                     await _repository.InsertAuditLogAsync(log);
-                    _logger.LogWarning("SİBER TEHDİT: SCADA Güç Spoofing'i yakalandı!");
+                    _logger.LogWarning("SİBER TEHDİT: {Country} kaynaklı SCADA Güç Spoofing'i yakalandı!", attackerGeo.Item2);
                 }
                 else if (dice <= 16)
                 {
-                    // %10 İHTİMAL: Normal Operatör Girişi (Masum Hareket)
+                    // %10 İHTİMAL: Normal Operatör Girişi (Masum) - Şirket içinden olduğu için TR
                     var log = new SystemAuditLog
                     {
                         Timestamp = DateTime.UtcNow,
-                        SourceIP = $"192.168.1.{random.Next(50, 100)}", // Operatörlerin IP bloğu
+                        SourceIP = $"192.168.1.{random.Next(50, 100)}",
                         UserName = faker.Name.FirstName() + "_Operatör",
                         ActionType = "LOGIN_SUCCESS",
                         Status = "SUCCESS",
-                        Details = "Vardiya başlangıcı rutin giriş."
+                        Details = "Vardiya başlangıcı rutin giriş.",
+                        CountryCode = "TR",
+                        CountryName = "Turkey"
                     };
                     await _repository.InsertAuditLogAsync(log);
                 }
-                // Geriye kalan %84'lük kısımda (dice > 16) siber log üretilmez, sistem sakindir.
 
-                // Döngü saniyede bir dönsün diye bekletiyoruz
-                await Task.Delay(1000, stoppingToken);
+                await Task.Delay(1000, stoppingToken); 
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Satır okunurken hata oluştu.");
+                _logger.LogError(ex, "Satır okunurken veya tehdit üretilirken hata oluştu.");
             }
         }
     }

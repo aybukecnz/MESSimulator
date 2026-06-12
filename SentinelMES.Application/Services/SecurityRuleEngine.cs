@@ -46,10 +46,13 @@ public class SecurityRuleEngine : ISecurityRuleEngine
             {
                 Timestamp = DateTime.UtcNow,
                 SourceIp = ip,
-                Username = username,
+                UserName = username,
                 ActionType = actionType,
                 Status = "FAILED",
-                Details = details
+                Details = details,
+                // Veritabanı artık bu iki alanı kesin bekliyor, dolduralım:
+                CountryCode = "TR",
+                CountryName = "Turkey"
             };
             await _alertRepository.AddAuditLogAsync(auditLog);
         }
