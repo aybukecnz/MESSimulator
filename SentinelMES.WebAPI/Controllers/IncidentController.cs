@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SentinelMES.Domain.Entities;
 using SentinelMES.Infrastructure.Persistence;
 
-namespace SentinelMES.API.Controllers;
+
+namespace SentinelMES.WebAPI.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -26,6 +28,7 @@ public class IncidentController : ControllerBase
         {
             existing.Status = request.Status;
             existing.ResolvedAt = DateTime.UtcNow;
+            _db.IncidentTriage.Update(existing);
         }
         else
         {
@@ -36,9 +39,19 @@ public class IncidentController : ControllerBase
                 ResolvedAt = DateTime.UtcNow
             });
         }
-
-        await _db.SaveChangesAsync();
-        return Ok(new { message = "Karar kaydedildi." });
+        // 4. Çift tıklama çakışmalarını önlemek için güvenli kayıt işlemi
+        try
+        {
+            await _db.SaveChangesAsync();
+            return Ok(new { message = "Karar başarıyla kaydedildi." });
+        }
+        catch (DbUpdateException)
+        {
+            // Eğer saliselik bir çift tıklama olduysa ve veritabanı "bu zaten var" derse,
+            // uygulamayı çökertme, sadece başarılı dön.
+            return Ok(new { message = "Bu olay zaten daha önce işlenmiş." });
+        }
+       
     }
 
     [HttpGet("all")]

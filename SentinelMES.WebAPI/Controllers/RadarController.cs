@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SentinelMES.Infrastructure.Persistence; // Kendi projendeki doğru klasör olduğuna emin ol
 using System.Linq;
@@ -6,6 +7,7 @@ using System.Threading.Tasks;
 
 namespace SentinelIMES.WebAPI.Controllers
 {
+    
     [Route("api/[controller]")]
     [ApiController]
     public class RadarController : ControllerBase

@@ -10,7 +10,6 @@ using System.Globalization;
 using SentinelMES.Simulator.Models;
 using SentinelMES.Simulator.Data;
 using Microsoft.Extensions.Logging;
-using SentinelMES.Simulator.Services; // DTO'ların olduğu namespace
 using Bogus;
 
 namespace SentinelMES.Simulator.Services;
@@ -20,7 +19,7 @@ public class CsvStreamingService
     private readonly TelemetryRepository _repository;
     private readonly ILogger<CsvStreamingService> _logger;
     private readonly ThreatDatasetReader _threatReader;
-    private static readonly HttpClient _httpClient = new HttpClient { BaseAddress = new Uri("http://localhost:8000") }; // Python API Bağlantısı
+    private static readonly HttpClient _httpClient = new HttpClient { BaseAddress = new Uri("http://localhost:8000") };
 
     public CsvStreamingService(TelemetryRepository repository, ILogger<CsvStreamingService> logger, ThreatDatasetReader threatReader)
     {
@@ -41,7 +40,6 @@ public class CsvStreamingService
         using var csv = new CsvReader(reader, config);
         csv.Context.RegisterClassMap<TelemetryMap>();
 
-        // CSV dosyalarını belleğe alıyoruz.
         string ddosPath = Path.Combine(Directory.GetCurrentDirectory(), "Scripts", "Friday-WorkingHours-Afternoon-DDos.pcap_ISCX.csv");
         string portScanPath = Path.Combine(Directory.GetCurrentDirectory(), "Scripts", "Friday-WorkingHours-Afternoon-PortScan.pcap_ISCX.csv");
 
@@ -57,29 +55,26 @@ public class CsvStreamingService
             try
             {
                 // ==========================================
-                // 1. FİZİKSEL AKIŞ (Kaggle CSV'den Okuma)
+                // 1. FİZİKSEL AKIŞ
                 // ==========================================
                 var telemetry = csv.GetRecord<MachineTelemetry>();
                 telemetry.Timestamp = DateTime.UtcNow;
 
-                // KRİTİK ADIM: Rastgele siber manipülasyon (Anomali) üretelim ki Yapay Zeka test edilebilsin (%10 ihtimal)
                 if (random.Next(1, 11) == 1)
                 {
-                    telemetry.WindSpeed = 1.2m; // Rüzgar çok düşük
-                    telemetry.ActivePower = 4500.0m; // Güç imkansız derecede yüksek (Spoofing)
+                    telemetry.WindSpeed = 1.2m;
+                    telemetry.ActivePower = 4500.0m;
                     _logger.LogWarning("⚠️ DİKKAT: Sisteme sentetik Spoofing saldırısı enjekte edildi, AI bekleniyor...");
                 }
 
                 await _repository.InsertTelemetryAsync(telemetry);
 
-                _logger.LogInformation("SCADA Verisi: Rüzgar {WindSpeed} m/s | Güç {Power} kW",
-                                        telemetry.WindSpeed, telemetry.ActivePower);
-
+                _logger.LogInformation("SCADA Verisi: Rüzgar {WindSpeed} m/s | Güç {Power} kW", telemetry.WindSpeed, telemetry.ActivePower);
 
                 // ==========================================
                 // 2. YAPAY ZEKA (XAI) ANALİZİ
                 // ==========================================
-                var telemetryPayload = new ScadaTelemetryRequest
+                var aiRequest = new ScadaTelemetryRequest
                 {
                     wind_speed = (double)telemetry.WindSpeed,
                     active_power = (double)telemetry.ActivePower,
@@ -90,7 +85,7 @@ public class CsvStreamingService
                 AiAnalysisResponse aiResponse = null;
                 try
                 {
-                    var httpResponse = await _httpClient.PostAsJsonAsync("/analyze", telemetryPayload, stoppingToken);
+                    var httpResponse = await _httpClient.PostAsJsonAsync("/analyze", aiRequest, stoppingToken);
                     if (httpResponse.IsSuccessStatusCode)
                     {
                         aiResponse = await httpResponse.Content.ReadFromJsonAsync<AiAnalysisResponse>(cancellationToken: stoppingToken);
@@ -98,10 +93,9 @@ public class CsvStreamingService
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError($"Yapay Zeka Motoruna bağlanılamadı! (Python çalışıyor mu?): {ex.Message}");
+                    _logger.LogError($"Yapay Zeka Motoruna bağlanılamadı! : {ex.Message}");
                 }
 
-                // EĞER YAPAY ZEKA ANOMALİ BULDUYSA (Ülke Geo-IP Zenginleştirmesi ile)
                 if (aiResponse != null && aiResponse.is_anomaly)
                 {
                     var aptCountries = new[] {
@@ -120,7 +114,7 @@ public class CsvStreamingService
                         UserName = "APT_HACKER",
                         ActionType = "AI_ANOMALY",
                         Status = "CRITICAL",
-                        Details = aiResponse.xai_explanation, // Python'dan gelen o efsanevi SHAP açıklaması
+                        Details = aiResponse.xai_explanation,
                         CountryCode = threatOrigin.Code,
                         CountryName = threatOrigin.Name
                     };
@@ -129,9 +123,8 @@ public class CsvStreamingService
                     _logger.LogCritical($"YAPAY ZEKA ALARMI ({threatOrigin.Code}): {aiResponse.xai_explanation}");
                 }
 
-
                 // ==========================================
-                // 3. SİBER AKIŞ (Eski Ağ Saldırıları Simülasyonu)
+                // 3. SİBER AKIŞ
                 // ==========================================
                 int dice = random.Next(1, 101);
 
@@ -149,7 +142,6 @@ public class CsvStreamingService
                         CountryName = "Turkey"
                     };
                     await _repository.InsertAuditLogAsync(log);
-                    _logger.LogWarning("SİBER TEHDİT: Reçete Manipülasyonu (İç Tehdit)!");
                 }
                 else if (dice <= 6)
                 {
@@ -157,6 +149,8 @@ public class CsvStreamingService
                     if (payload != null)
                     {
                         string ddosIp = "195.14.161." + random.Next(1, 255);
+                        string fakeMac = faker.Internet.Mac();
+
                         var log = new SystemAuditLog
                         {
                             Timestamp = DateTime.UtcNow,
@@ -164,12 +158,11 @@ public class CsvStreamingService
                             UserName = "UNKNOWN",
                             ActionType = "DDOS_ATTACK",
                             Status = "FAILED",
-                            Details = $"[AĞ İHLALİ] Yüksek hacimli anormal trafik paketi (DDoS) tespit edildi. İstek düşürüldü. (Hedef IP: {ddosIp})",
+                            Details = $"[AĞ İHLALİ] Yüksek hacimli anormal trafik paketi (DDoS) tespit edildi. İstek düşürüldü. (Hedef IP: {ddosIp} | Kaynak MAC: {fakeMac})",
                             CountryCode = "RU",
                             CountryName = "Russia"
                         };
                         await _repository.InsertAuditLogAsync(log);
-                        _logger.LogCritical("SİBER SALDIRI: Rusya kaynaklı DDoS engellendi!");
                     }
                 }
                 else if (dice > 6 && dice <= 10)
@@ -178,6 +171,8 @@ public class CsvStreamingService
                     if (payload != null)
                     {
                         string scanIp = "114.114.114." + random.Next(1, 255);
+                        string fakeMac = faker.Internet.Mac();
+
                         var log = new SystemAuditLog
                         {
                             Timestamp = DateTime.UtcNow,
@@ -185,12 +180,11 @@ public class CsvStreamingService
                             UserName = "UNKNOWN",
                             ActionType = "PORT_SCAN",
                             Status = "FAILED",
-                            Details = $"[SİBER KEŞİF] Ağ üzerinde yetkisiz port taraması yapılıyor. (Kaynak IP: {scanIp})",
+                            Details = $"[SİBER KEŞİF] Ağ üzerinde yetkisiz port taraması yapılıyor. (Kaynak IP: {scanIp} | Kaynak MAC: {fakeMac})",
                             CountryCode = "CN",
                             CountryName = "China"
                         };
                         await _repository.InsertAuditLogAsync(log);
-                        _logger.LogWarning("TEHDİT: Çin kaynaklı PortScan keşfi durduruldu.");
                     }
                 }
                 else if (dice <= 16)
@@ -209,24 +203,12 @@ public class CsvStreamingService
                     await _repository.InsertAuditLogAsync(log);
                 }
 
-                // Fren Pedalı (Konsol çok hızlı akmasın diye 2 saniyeye çıkardık)
                 await Task.Delay(2000, stoppingToken);
-            }
+            } // END OF TRY BLOCK
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Satır okunurken veya tehdit üretilirken hata oluştu.");
-            }
-        }
-    }
-}
-
-public sealed class TelemetryMap : ClassMap<MachineTelemetry>
-{
-    public TelemetryMap()
-    {
-        Map(m => m.ActivePower).Name("LV ActivePower (kW)");
-        Map(m => m.WindSpeed).Name("Wind Speed (m/s)");
-        Map(m => m.TheoreticalPower).Name("Theoretical_Power_Curve (KWh)");
-        Map(m => m.WindDirection).Name("Wind Direction (°)");
-    }
-}
+            } // END OF CATCH BLOCK
+        } // END OF WHILE LOOP
+    } // END OF METHOD
+} // END OF CLASS

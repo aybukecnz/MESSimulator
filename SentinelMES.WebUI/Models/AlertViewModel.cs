@@ -7,5 +7,6 @@ public class AlertViewModel
     public string AlertType { get; set; } = string.Empty;
     public string Severity { get; set; } = string.Empty;
     public string Message { get; set; } = string.Empty;
-    public string SourceIP { get; set; }
+    public string? SourceIP { get; set; }
+    public string? Details { get; set; }
 }

@@ -83,14 +83,9 @@ def analyze_telemetry(data: ScadaTelemetry):
     #  GÜVENLİ VE DİNAMİK GERİ DÖNÜŞ
     return {
         "is_anomaly": is_anomaly,
-        "confidence": float(probability),
-        
-        # C# Simülatörü hangi ismi bekliyorsa ikisini de veriyoruz ki null kalıp çökmesin
-        "explanation": explanation,  
-        "details": explanation,      
-        "Details": explanation,  #  Büyük harf sigortası
-        "message": explanation,      
-        "Message": explanation,  #  Büyük harf sigortası
-        
+        "confidence_score": float(probability),
+        "xai_explanation": explanation,
+        "details": explanation,                 # Web arayüzü doğrudan bunu okuyorsa diye yedek
         "shap_values": shap_out
+
     }

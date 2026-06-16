@@ -1,14 +1,33 @@
 ﻿using SentinelMES.Application;
 using SentinelMES.Infrastructure;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+        };
+    });
+
 // Add services to the container.
-builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// 🧠 MİMARİ BAĞLANTILAR: Diğer katmanlardaki IoC kayıtlarını çağırıyoruz
+builder.Services.AddControllers().AddJsonOptions(x => x.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles);
+
+//  MİMARİ BAĞLANTILAR: Diğer katmanlardaki IoC kayıtlarını çağırıyoruz
 builder.Services.AddApplicationServices();
 builder.Services.AddInfrastructureServices(builder.Configuration);
 
@@ -25,6 +44,9 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+app.UseAuthentication(); // Önce kimlik sor!
+app.UseAuthorization();  // Sonra yetkisine bak!
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -34,7 +56,7 @@ if (app.Environment.IsDevelopment())
 
 // Geliştirme ortamında sertifika hatalarını önlemek için UseHttpsRedirection devre dışı bırakıldı.
 
-// 🚨 KESİN KURAL: CORS politikası Authorization ve MapControllers'tan ÖNCE tetiklenmelidir!
+//  KESİN KURAL: CORS politikası Authorization ve MapControllers'tan ÖNCE tetiklenmelidir!
 app.UseCors("AllowAll");
 
 app.UseAuthorization();
