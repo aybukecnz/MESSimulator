@@ -1,4 +1,5 @@
-﻿namespace SentinelMES.Simulator.Services
+﻿
+namespace SentinelMES.Simulator.Services
 {
     // Python'a gönderilecek SCADA verisi
     public class ScadaTelemetryRequest

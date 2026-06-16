@@ -4,18 +4,18 @@ using System.Net.Http.Json;
 
 namespace SentinelMES.WebUI.Controllers;
 
+[ApiExplorerSettings(IgnoreApi = true)]
 public class HomeController : Controller
 {
     private readonly HttpClient _httpClient;
 
     public HomeController()
     {
-        // WebAPI projesini dinleyen HttpClient temel yapılandırması
-        _httpClient = new HttpClient { BaseAddress = new Uri("http://localhost:5000") };
+        _httpClient = new HttpClient { BaseAddress = new Uri("https://localhost:5001") };
     }
 
-    //  STRATEJİK KOMUTA MERKEZİ (DASHBOARD)
-    [Route("")] // Tarayıcıya sadece localhost:8500 yazınca burası tetiklenecek.
+    // STRATEJİK KOMUTA MERKEZİ (DASHBOARD)
+    [Route("")]
     [Route("Home/Dashboard")]
     public async Task<IActionResult> Dashboard()
     {
@@ -23,30 +23,27 @@ public class HomeController : Controller
 
         try
         {
+            // API zaten AlertViewModel dönüyor, direkt alıyoruz.
             var activeAlerts = await _httpClient.GetFromJsonAsync<List<AlertViewModel>>("/api/Alert/active")
                                ?? new List<AlertViewModel>();
+
             unifiedAlerts.AddRange(activeAlerts);
 
-            var auditLogs = await _httpClient.GetFromJsonAsync<List<AuditLogDto>>("/api/Alert/audit-logs")
-                            ?? new List<AuditLogDto>();
+            // Audit logları da direkt AlertViewModel olarak alıyoruz
+            var auditLogs = await _httpClient.GetFromJsonAsync<List<AlertViewModel>>("/api/Alert/audit-logs")
+                            ?? new List<AlertViewModel>();
 
             foreach (var log in auditLogs)
             {
-                if (log.ActionType == "DDOS_ATTACK" ||
-                    log.ActionType == "PORT_SCAN" ||
-                    log.ActionType == "INSIDER_THREAT" ||
-                    log.ActionType == "LOGIN_SUCCESS" ||
-                    log.ActionType == "AI_ANOMALY")
+                // API tarafında ActionType zaten AlertType olarak maplenmişti!
+                if (log.AlertType == "DDOS_ATTACK" ||
+                    log.AlertType == "PORT_SCAN" ||
+                    log.AlertType == "INSIDER_THREAT" ||
+                    log.AlertType == "LOGIN_SUCCESS" ||
+                    log.AlertType == "AI_ANOMALY")
                 {
-                    unifiedAlerts.Add(new AlertViewModel
-                    {
-                        AlertId = log.LogId,
-                        Timestamp = log.Timestamp,
-                        AlertType = log.ActionType,
-                        Severity = log.Status == "SUCCESS" ? "INFO" : (log.Status ?? "CRITICAL"),
-                        Message = log.Details,
-                        SourceIP = log.SourceIp
-                    });
+                    // Veriyi ikinci kez dönüştürmeye gerek yok, doğrudan ekle
+                    unifiedAlerts.Add(log);
                 }
             }
         }
@@ -58,33 +55,26 @@ public class HomeController : Controller
         return View(unifiedAlerts.OrderByDescending(a => a.Timestamp).ToList());
     }
 
-    // 🚀 ADLİ BİLİŞİM & CENTRAL LOG DEPOSU (AUDIT LOGS)
+    // ADLİ BİLİŞİM & CENTRAL LOG DEPOSU (AUDIT LOGS)
     public async Task<IActionResult> AuditLogs()
     {
         List<AlertViewModel> archivedAlerts = new();
 
         try
         {
-            var auditLogs = await _httpClient.GetFromJsonAsync<List<AuditLogDto>>("/api/Alert/audit-logs")
-                            ?? new List<AuditLogDto>();
+            // Yine doğrudan AlertViewModel olarak alıyoruz
+            var auditLogs = await _httpClient.GetFromJsonAsync<List<AlertViewModel>>("/api/Alert/audit-logs")
+                            ?? new List<AlertViewModel>();
 
             foreach (var log in auditLogs)
             {
-                if (log.ActionType == "DDOS_ATTACK" ||
-                    log.ActionType == "PORT_SCAN" ||
-                    log.ActionType == "INSIDER_THREAT" ||
-                    log.ActionType == "LOGIN_SUCCESS" ||
-                    log.ActionType == "AI_ANOMALY")
+                if (log.AlertType == "DDOS_ATTACK" ||
+                    log.AlertType == "PORT_SCAN" ||
+                    log.AlertType == "INSIDER_THREAT" ||
+                    log.AlertType == "LOGIN_SUCCESS" ||
+                    log.AlertType == "AI_ANOMALY")
                 {
-                    archivedAlerts.Add(new AlertViewModel
-                    {
-                        AlertId = log.LogId,
-                        Timestamp = log.Timestamp,
-                        AlertType = log.ActionType,
-                        Severity = log.Status == "SUCCESS" ? "INFO" : (log.Status ?? "CRITICAL"),
-                        Message = log.Details,
-                        SourceIP = log.SourceIp
-                    });
+                    archivedAlerts.Add(log);
                 }
             }
         }

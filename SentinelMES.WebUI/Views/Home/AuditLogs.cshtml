@@ -176,11 +176,11 @@
                                 @foreach (var alert in Model.Where(a => a.AlertType == "DDOS_ATTACK" || a.AlertType == "PORT_SCAN"))
                                 {
                                     <tr>
-                                        <td class="padding-left: 1.5rem;"><span class="event-id-highlight">#@alert.AlertId</span></td>
-                                        <td class="text-secondary font-monospace">@alert.Timestamp.ToString("HH:mm:ss | dd.MM.yyyy")</td>
+                                        <td style="padding-left: 1.5rem;"><span class="event-id-highlight">#@alert.AlertId</span></td>
+                                        <td class="text-secondary font-monospace">@alert.Timestamp.ToString("HH:mm:ss")</td>
                                         <td><span class="ip-highlight">@alert.SourceIP</span></td>
                                         <td><span class="badge-cyber @(alert.AlertType == "DDOS_ATTACK" ? "badge-glow-red" : "badge-glow-blue")">@alert.AlertType</span></td>
-                                        <td><span class="log-message-highlight">@alert.Message</span></td>
+                                        <td><span class="log-message-highlight text-light">@(alert.Details ?? alert.Message)</span></td>
                                     </tr>
                                 }
                             </tbody>
@@ -204,25 +204,45 @@
                     <div class="table-responsive">
                         <table class="table mb-0" id="scadaTable">
                             <thead>
-                                <tr><th style="width: 12%; padding-left: 1.5rem;">Event ID</th><th style="width: 18%;">Timestamp</th><th style="width: 18%;">Source IP</th><th style="width: 22%;">Classification</th><th>Forensic Analysis Narrative</th></tr>
+                                <tr>
+                                    <th style="width: 12%; padding-left: 1.5rem;">Event ID</th>
+                                    <th style="width: 18%;">Timestamp</th>
+                                    <th style="width: 18%;">Source IP</th>
+                                    <th style="width: 22%;">Classification</th>
+                                    <th>Forensic Analysis Narrative</th>
+                                </tr>
                             </thead>
                             <tbody>
                                 @foreach (var alert in Model.Where(a => a.AlertType == "AI_ANOMALY" || a.AlertType == "OPERASYONEL_ANOMALI" || a.AlertType == "SİBER_ŞÜPHE"))
                                 {
                                     <tr>
-                                        <td class="padding-left: 1.5rem;"><span class="event-id-highlight">#@alert.AlertId</span></td>
+                                        <td style="padding-left: 1.5rem;"><span class="event-id-highlight">#@alert.AlertId</span></td>
                                         <td class="text-secondary font-monospace">@alert.Timestamp.ToString("HH:mm:ss | dd.MM.yyyy")</td>
                                         <td><span class="ip-highlight">@alert.SourceIP</span></td>
-                                        <td><span class="badge-cyber badge-glow-purple"><i class="bi bi-cpu-fill me-1"></i> SPOOFING DETECTED</span></td>
                                         <td>
-                                            <span class="badge me-2" style="background-color: rgba(111, 66, 193, 0.2); border: 1px solid #d8b4fe; color: #e9d5ff; font-size: 0.75rem;"><i class="bi bi-cpu"></i> 🧠 AI Analizli</span>
-                                            <span class="log-message-highlight">@alert.Message</span>
+                                            <span class="badge-cyber badge-glow-purple"><i class="bi bi-cpu-fill me-1"></i> @alert.AlertType</span>
+                                        </td>
+                                        <td style="max-width: 450px; white-space: normal; word-break: break-word;">
+                                            @if (alert.AlertType == "AI_ANOMALY")
+                                            {
+                                                <span class="badge me-2" style="background-color: rgba(111, 66, 193, 0.2); border: 1px solid #d8b4fe; color: #e9d5ff; font-size: 0.75rem;">
+                                                    <i class="bi bi-cpu"></i> AI Analizli
+                                                </span>
+                                                <span class="log-message-highlight text-light">@(alert.Details ?? "Yapay zeka analizi işleniyor...")</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="log-message-highlight text-light">@(alert.Message ?? "İşlem Detayı Yok")</span>
+                                            }
                                         </td>
                                     </tr>
                                 }
                             </tbody>
                         </table>
                     </div>
+                </div>
+
+
                     <div class="d-flex justify-content-between align-items-center p-3 border-top border-secondary cyber-pagination" id="scadaControls">
                         <select class="form-select form-select-sm p-1 rounded font-monospace" id="scadaSize" style="width: auto; font-size: 0.8rem;">
                             <option value="10" selected>10 Rows</option>
@@ -244,16 +264,16 @@
                                 <tr><th style="width: 12%; padding-left: 1.5rem;">Event ID</th><th style="width: 18%;">Timestamp</th><th style="width: 18%;">Source IP</th><th style="width: 20%;">Vector Type</th><th>Audit Details</th></tr>
                             </thead>
                             <tbody>
-                                @foreach (var alert in Model.Where(a => a.AlertType == "INSIDER_THREAT" || a.AlertType == "LOGIN_SUCCESS"))
-                                {
-                                    <tr>
-                                        <td class="padding-left: 1.5rem;"><span class="event-id-highlight">#@alert.AlertId</span></td>
-                                        <td class="text-secondary font-monospace">@alert.Timestamp.ToString("HH:mm:ss | dd.MM.yyyy")</td>
-                                        <td><span class="ip-highlight">@alert.SourceIP</span></td>
-                                        <td><span class="badge-cyber @(alert.AlertType == "INSIDER_THREAT" ? "badge-glow-red" : "badge-glow-yellow")">@alert.AlertType</span></td>
-                                        <td><span class="log-message-highlight">@alert.Message</span></td>
-                                    </tr>
-                                }
+                            @foreach (var alert in Model.Where(a => a.AlertType == "INSIDER_THREAT" || a.AlertType == "LOGIN_SUCCESS"))
+                            {
+                                <tr>
+                                    <td style="padding-left: 1.5rem;"><span class="event-id-highlight">#@alert.AlertId</span></td>
+                                    <td class="text-secondary font-monospace">@alert.Timestamp.ToString("HH:mm:ss")</td>
+                                    <td><span class="ip-highlight">@alert.SourceIP</span></td>
+                                    <td><span class="badge-cyber @(alert.AlertType == "INSIDER_THREAT" ? "badge-glow-red" : "badge-glow-yellow")">@alert.AlertType</span></td>
+                                    <td><span class="log-message-highlight text-light">@alert.Message</span></td>
+                                </tr>
+                            }
                             </tbody>
                         </table>
                     </div>

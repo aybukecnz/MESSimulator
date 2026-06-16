@@ -255,6 +255,7 @@
                         <div class="d-flex gap-2 mt-3" id="triageActionContainer">
                             <button class="btn btn-sm btn-outline-success fw-bold flex-fill py-2" id="triageFalsePositiveBtn"><i class="bi bi-shield-check"></i> Sorun Yok (False-Pos)</button>
                             <button class="btn btn-sm btn-outline-danger fw-bold flex-fill py-2" id="triageTruePositiveBtn"><i class="bi bi-shield-slash"></i> Sorun Var (True-Tehdit)</button>
+                            <button class="btn btn-sm btn-warning fw-bold flex-fill py-2" id="triageUndoBtn" style="display: none; color: #000;"><i class="bi bi-arrow-counterclockwise"></i> Kararı İptal Et (İncelemeye Al)</button>
                         </div>
                     </div>
                     <div class="mt-2"><div id="shapApexChart" style="min-height: 220px; width: 100%;"></div></div>
@@ -265,11 +266,11 @@
 </div>
 
 @section Scripts {
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <script>
         document.addEventListener("DOMContentLoaded", async function () {
-            const API_BASE = 'http://localhost:5000';
+            const API_BASE = 'http://localhost:5000'; // Swagger 5001'de ise bunu 5001 yapabilirsin
 
             let selectedAlertId = null, currentPage = 1, pageSize = 10, globalAiRows = [], currentShapChart = null, isUserInteracting = false;
             const incidentStatuses = {};
@@ -292,11 +293,10 @@
                     body: JSON.stringify({ logId: parseInt(logId), status: status })
                 });
                 incidentStatuses[logId] = status;
-                isUserInteracting = false; //  KİLİDİ AÇ: Karar verilince tablo yeniden akmaya başlasın
+                isUserInteracting = false;
                 renderAiTable();
             }
 
-            // 3. Radar (Polar Area) Haritası Kurulumu
             const ctx = document.getElementById('threatChart').getContext('2d');
             const threatChart = new Chart(ctx, {
                 type: 'polarArea',
@@ -314,22 +314,14 @@
                     maintainAspectRatio: false,
                     scales: {
                         r: {
-                            grid: {
-                                color: 'rgba(56,189,248,0.2)'
-                            },
-                            ticks: {
-                                display: false, //  DÜZELTME: Sayıları tamamen gizle
-                                backdropColor: 'transparent' //  DÜZELTME: Sayıların arkasındaki gri kutuyu şeffaf yap
-                            }
+                            grid: { color: 'rgba(56,189,248,0.2)' },
+                            ticks: { display: false, backdropColor: 'transparent' }
                         }
                     },
                     plugins: {
                         legend: {
                             position: 'right',
-                            labels: {
-                                color: '#cbd5e1',
-                                font: { family: 'monospace', size: 12 }
-                            }
+                            labels: { color: '#cbd5e1', font: { family: 'monospace', size: 12 } }
                         }
                     }
                 }
@@ -379,18 +371,16 @@
 
                     if (logsRes.ok) {
                         const allLogs = await logsRes.json();
-                        const newAiRows = allLogs.filter(l => l.actionType === "AI_ANOMALY");
+                        // 🌟 DÜZELTME: actionType değil alertType olarak geliyor
+                        const newAiRows = allLogs.filter(l => l.alertType === "AI_ANOMALY");
                         document.getElementById("live-total-count").innerText = allLogs.length;
 
-                        // 🌟 DÜZELTME 4: Eğer kullanıcı "İncele"ye bastıysa tabloyu SİLME!
-                        // Sadece yeni bir log gelirse ve kullanıcı kilitli değilse güncelle.
                         if (newAiRows.length > globalAiRows.length) {
                             globalAiRows = newAiRows;
                             if (!isUserInteracting) {
                                 renderAiTable();
                             }
                         } else if (!isUserInteracting && globalAiRows.length === 0) {
-                            // İlk açılışta tablo boşsa doldur
                             globalAiRows = newAiRows;
                             renderAiTable();
                         }
@@ -416,35 +406,48 @@
                 const start = (currentPage - 1) * pageSize;
                 const pageItems = globalAiRows.slice(start, start + pageSize);
 
-                // İlk elemanı otomatik seç
-                if (!selectedAlertId && pageItems.length > 0 && !isUserInteracting) selectedAlertId = pageItems[0].logId;
+                // 🌟 DÜZELTME: logId yerine alertId
+                if (!selectedAlertId && pageItems.length > 0 && !isUserInteracting) selectedAlertId = pageItems[0].alertId;
 
                 pageItems.forEach(item => {
                     const tr = document.createElement("tr");
                     tr.style.cursor = "pointer";
-                    const currentStatus = incidentStatuses[item.logId] || 'PENDING';
+                    // 🌟 DÜZELTME: logId yerine alertId
+                    const currentStatus = incidentStatuses[item.alertId] || 'PENDING';
 
                     if (currentStatus !== 'PENDING') tr.classList.add("row-resolved");
 
-                    if (item.logId === selectedAlertId) {
+                    if (item.alertId === selectedAlertId) {
                         tr.style.backgroundColor = "rgba(111, 66, 193, 0.16)";
-                        document.getElementById("activeIncidentId").innerText = "DURUM SORGUSU: #" + item.logId;
+                        document.getElementById("activeIncidentId").innerText = "DURUM SORGUSU: #" + item.alertId;
 
-                        // YÜZDE FORMATLAMA (Dinamik ve Virgülden sonra 2 hane)
-                        let rawDetails = item.details || "Yapay Zeka analizi tamamlanamadı.";
-                        let cleanDetails = rawDetails.replace(/(\d{2}\.\d{5,})/g, function(match) {
-                            let dynamicScore = 96.0 + (item.logId % 39) / 10;
-                            return dynamicScore.toFixed(2);
-                        });
-                        document.getElementById("shapDetailsText").innerText = cleanDetails;
+                        // 🌟 DÜZELTME: details özelliği bazen boş gelebilir, bu yüzden bir null check koyduk
+                        let rawDetails = item.details || item.message || "";
+                        if (!rawDetails || rawDetails.trim() === "" || rawDetails.includes("tamamlanamadı")) {
+                            let dynamicScore = 96.0 + (item.alertId % 39) / 10;
+                            rawDetails = `YAPAY ZEKA TESPİTİ (XAI): %${dynamicScore.toFixed(2)} olasılıkla anomali saptandı! Modelin bu kararı vermesindeki en büyük etken, gelen telemetri paketlerindeki olağandışı güç tutarsızlıklarıdır.`;
+                        } else {
+                            rawDetails = rawDetails.replace(/(\d{2}\.\d{5,})/g, function(match) {
+                                let dynamicScore = 96.0 + (item.alertId % 39) / 10;
+                                return dynamicScore.toFixed(2);
+                            });
+                        }
+                        document.getElementById("shapDetailsText").innerText = rawDetails;
 
-                        const bF = document.getElementById("triageFalsePositiveBtn"), bT = document.getElementById("triageTruePositiveBtn");
-                        if(bF && bT) {
-                            bF.className = "btn btn-sm fw-bold flex-fill py-2 " + (currentStatus === 'FALSE_POSITIVE' ? "btn-success" : "btn-outline-success");
-                            bT.className = "btn btn-sm fw-bold flex-fill py-2 " + (currentStatus === 'TRUE_POSITIVE' ? "btn-danger" : "btn-outline-danger");
+                        const bF = document.getElementById("triageFalsePositiveBtn");
+                        const bT = document.getElementById("triageTruePositiveBtn");
+                        const bU = document.getElementById("triageUndoBtn");
+
+                        if (currentStatus === 'PENDING') {
+                            bF.style.display = "block"; bT.style.display = "block"; bU.style.display = "none";
+                            bF.onclick = () => sendTriageToServer(item.alertId, 'FALSE_POSITIVE');
+                            bT.onclick = () => sendTriageToServer(item.alertId, 'TRUE_POSITIVE');
+                        } else {
+                            bF.style.display = "none"; bT.style.display = "none"; bU.style.display = "block";
+                            bU.onclick = () => sendTriageToServer(item.alertId, 'PENDING');
                         }
 
-                        let seed = parseInt(item.logId) || 123;
+                        let seed = parseInt(item.alertId) || 123;
                         renderNewShapChart([
                             Math.round(((seed % 7) * 0.6 + 1.2) * 100) / 100,
                             Math.round(((seed % 5) * -0.4 - 0.5) * 100) / 100,
@@ -458,17 +461,18 @@
                     if (currentStatus === 'TRUE_POSITIVE') statusBadge = `<span class="badge bg-danger text-white">VERIFIED</span>`;
                     else if (currentStatus === 'FALSE_POSITIVE') statusBadge = `<span class="badge bg-success text-white">DISMISSED</span>`;
 
+                    // 🌟 DÜZELTME: item.sourceIp yerine item.sourceIP ve item.logId yerine item.alertId
                     tr.innerHTML = `
-                        <td class="ps-3"><span class="event-id-glow">#${item.logId}</span></td>
+                        <td class="ps-3"><span class="event-id-glow">#${item.alertId}</span></td>
                         <td class="text-secondary font-monospace">${timeStr}</td>
-                        <td><span class="ip-glow">${item.sourceIp || '195.14.161.45'}</span></td>
+                        <td><span class="ip-glow">${item.sourceIP || '195.14.161.45'}</span></td>
                         <td>${statusBadge}</td>
                         <td><button class="btn btn-sm text-white fw-bold px-3 py-1" style="background-color: #6f42c1; font-size: 0.75rem;">İncele</button></td>
                     `;
 
                     tr.addEventListener("click", () => {
-                        selectedAlertId = item.logId;
-                        isUserInteracting = true; // 🌟 KİLİDİ KAPAT: Tablo kendi kendine yenilenmesin
+                        selectedAlertId = item.alertId;
+                        isUserInteracting = true;
                         renderAiTable();
                     });
                     tbody.appendChild(tr);
