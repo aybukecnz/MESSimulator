@@ -24,7 +24,8 @@ public class NetworkTrafficController : ControllerBase
             packet.MacAddress,
             packet.Username,
             packet.ActionType,
-            packet.Details);
+            packet.Details)
+        ;
 
         if (!isSafe)
         {
@@ -43,4 +44,6 @@ public class NetworkPacketDto
     public string Username { get; set; } = string.Empty;
     public string ActionType { get; set; } = string.Empty;
     public string Details { get; set; } = string.Empty;
+    public string CountryCode { get; set; } = string.Empty;
+    public string CountryName { get; set; } = string.Empty;
 }

@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+ï»¿using Microsoft.AspNetCore.Mvc;
 using SentinelMES.WebUI.Models;
 using System.Net.Http.Json;
 
@@ -10,31 +10,33 @@ public class HomeController : Controller
 
     public HomeController()
     {
+        // WebAPI projesini dinleyen HttpClient temel yapÄ±landÄ±rmasÄ±
         _httpClient = new HttpClient { BaseAddress = new Uri("http://localhost:5000") };
     }
 
-    public async Task<IActionResult> Index()
+    //  STRATEJÄ°K KOMUTA MERKEZÄ° (DASHBOARD)
+    [Route("")] // TarayÄ±cÄ±ya sadece localhost:8500 yazÄ±nca burasÄ± tetiklenecek.
+    [Route("Home/Dashboard")]
+    public async Task<IActionResult> Dashboard()
     {
         List<AlertViewModel> unifiedAlerts = new();
 
         try
         {
-            // 1. AÐ ÝHLALLERÝ (Eðer Alert tablosunda aktif bir þey varsa)
             var activeAlerts = await _httpClient.GetFromJsonAsync<List<AlertViewModel>>("/api/Alert/active")
                                ?? new List<AlertViewModel>();
             unifiedAlerts.AddRange(activeAlerts);
 
-            // 2. ÝÇ AÐ & SCADA TEHDÝTLERÝ (Bizim simülatörden basýlan loglar)
             var auditLogs = await _httpClient.GetFromJsonAsync<List<AuditLogDto>>("/api/Alert/audit-logs")
                             ?? new List<AuditLogDto>();
 
             foreach (var log in auditLogs)
             {
-                // DÝKKAT: Filtreyi tamamen yeni Global Ýngilizce standartlarýmýza göre açtýk!
                 if (log.ActionType == "DDOS_ATTACK" ||
                     log.ActionType == "PORT_SCAN" ||
                     log.ActionType == "INSIDER_THREAT" ||
-                    log.ActionType == "LOGIN_SUCCESS")
+                    log.ActionType == "LOGIN_SUCCESS" ||
+                    log.ActionType == "AI_ANOMALY")
                 {
                     unifiedAlerts.Add(new AlertViewModel
                     {
@@ -42,22 +44,55 @@ public class HomeController : Controller
                         Timestamp = log.Timestamp,
                         AlertType = log.ActionType,
                         Severity = log.Status == "SUCCESS" ? "INFO" : (log.Status ?? "CRITICAL"),
-
-                        // Zaten CsvStreamingService'de mesajý (IP dahil) harika þekilde hazýrladýðýmýz için, 
-                        // buraya ekstra bir þey eklemeden doðrudan veritabanýndaki o güzel metni alýyoruz:
-                        Message = log.Details
+                        Message = log.Details,
+                        SourceIP = log.SourceIp
                     });
                 }
             }
         }
         catch (Exception ex)
         {
-            ViewBag.ErrorMessage = $"Siber Güvenlik API'sine baðlanýlamadý! Hata: {ex.Message}";
+            ViewBag.ErrorMessage = $"API BaÄŸlantÄ± HatasÄ±: {ex.Message}";
         }
 
-        // Bütün alarmlarý zamana göre diz (En yeni en üstte)
-        unifiedAlerts = unifiedAlerts.OrderByDescending(a => a.Timestamp).ToList();
+        return View(unifiedAlerts.OrderByDescending(a => a.Timestamp).ToList());
+    }
 
-        return View(unifiedAlerts);
+    // ðŸš€ ADLÄ° BÄ°LÄ°ÅžÄ°M & CENTRAL LOG DEPOSU (AUDIT LOGS)
+    public async Task<IActionResult> AuditLogs()
+    {
+        List<AlertViewModel> archivedAlerts = new();
+
+        try
+        {
+            var auditLogs = await _httpClient.GetFromJsonAsync<List<AuditLogDto>>("/api/Alert/audit-logs")
+                            ?? new List<AuditLogDto>();
+
+            foreach (var log in auditLogs)
+            {
+                if (log.ActionType == "DDOS_ATTACK" ||
+                    log.ActionType == "PORT_SCAN" ||
+                    log.ActionType == "INSIDER_THREAT" ||
+                    log.ActionType == "LOGIN_SUCCESS" ||
+                    log.ActionType == "AI_ANOMALY")
+                {
+                    archivedAlerts.Add(new AlertViewModel
+                    {
+                        AlertId = log.LogId,
+                        Timestamp = log.Timestamp,
+                        AlertType = log.ActionType,
+                        Severity = log.Status == "SUCCESS" ? "INFO" : (log.Status ?? "CRITICAL"),
+                        Message = log.Details,
+                        SourceIP = log.SourceIp
+                    });
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            ViewBag.ErrorMessage = $"Log ArÅŸivine baÄŸlanÄ±lamadÄ±: {ex.Message}";
+        }
+
+        return View(archivedAlerts.OrderByDescending(a => a.Timestamp).ToList());
     }
 }

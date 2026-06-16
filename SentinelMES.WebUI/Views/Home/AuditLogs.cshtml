@@ -1,0 +1,305 @@
+﻿@model List<SentinelMES.WebUI.Models.AlertViewModel>
+
+@{
+    ViewData["Title"] = "Audit Logs";
+}
+
+<style>
+    /* BEYAZ ALAN KİLİTLERİ VE TABLO KARARTMA */
+    .table {
+        --bs-table-bg: transparent !important;
+        color: #f8fafc !important;
+        border-color: #1e293b !important;
+    }
+
+        .table td, .table th {
+            background-color: #111827 !important;
+            color: #f8fafc !important;
+            border-bottom: 1px solid #1f2937 !important;
+            padding: 1.2rem 1rem;
+            vertical-align: middle;
+        }
+
+        .table tbody tr:hover td {
+            background-color: #1e293b !important;
+        }
+
+        .table thead th {
+            background-color: #1f2937 !important;
+            color: #38bdf8 !important;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+        }
+
+    .soc-card {
+        background-color: #111827;
+        border: 1px solid #1f2937;
+        border-radius: 14px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+        overflow: hidden;
+    }
+
+    .soc-header {
+        background: linear-gradient(90deg, #1e293b 0%, #111827 100%);
+        border-bottom: 1px solid #2d3748;
+        padding: 1.5rem;
+    }
+
+    .badge-cyber {
+        padding: 0.6em 1em;
+        border-radius: 6px;
+        font-weight: 700;
+        font-size: 0.75rem;
+        display: inline-block;
+        font-family: monospace;
+    }
+
+    .badge-glow-red {
+        background-color: rgba(239, 68, 68, 0.1) !important;
+        border: 1px solid #ef4444 !important;
+        color: #fca5a5 !important;
+    }
+
+    .badge-glow-blue {
+        background-color: rgba(56, 189, 248, 0.1) !important;
+        border: 1px solid #38bdf8 !important;
+        color: #e0f2fe !important;
+    }
+
+    .badge-glow-purple {
+        background-color: rgba(168, 85, 247, 0.15) !important;
+        border: 1px solid #a855f7 !important;
+        color: #f3e8ff !important;
+    }
+
+    .badge-glow-yellow {
+        background-color: rgba(217, 119, 6, 0.1) !important;
+        border: 1px solid #d97706 !important;
+        color: #f59e0b !important;
+    }
+
+    .nav-pills .nav-link {
+        color: #cbd5e1;
+        border-radius: 8px;
+        margin: 0 6px;
+        font-weight: 600;
+        padding: 0.8rem 1.5rem;
+    }
+
+        .nav-pills .nav-link.active {
+            background-color: rgba(56, 189, 248, 0.1) !important;
+            color: #38bdf8 !important;
+            border: 1px solid #38bdf8 !important;
+        }
+
+    /* MAKSIMUM OKUNABİLİRLİK SINIFLARI */
+    .event-id-highlight {
+        color: #f8fafc !important;
+        font-family: monospace;
+        font-weight: 700;
+        font-size: 0.95rem;
+    }
+
+    .log-message-highlight {
+        color: #e2e8f0 !important;
+        line-height: 1.4;
+        font-family: 'Segoe UI', sans-serif;
+    }
+
+    .ip-highlight {
+        color: #fbbf24 !important;
+        font-family: monospace;
+        font-weight: 700;
+    }
+
+    .cyber-pagination select {
+        background-color: #1f2937 !important;
+        color: #f8fafc !important;
+        border: 1px solid #374151 !important;
+    }
+
+    .cyber-page-btn {
+        background-color: #1f2937 !important;
+        color: #cbd5e1 !important;
+        border: 1px solid #374151 !important;
+        min-width: 38px;
+        height: 38px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        border-radius: 6px;
+        transition: all 0.2s;
+    }
+
+        .cyber-page-btn:hover:not(:disabled) {
+            background-color: #374151 !important;
+            color: #38bdf8 !important;
+            border-color: #38bdf8 !important;
+        }
+
+        .cyber-page-btn.active {
+            background-color: rgba(56, 189, 248, 0.15) !important;
+            border-color: #38bdf8 !important;
+            color: #38bdf8 !important;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+        }
+</style>
+
+<div class="container-fluid mt-3 mb-5 px-4">
+    <div class="mb-4">
+        <h2 class="text-white fw-bold mb-1"><i class="bi bi-server text-info"></i> Central Audit Logs</h2>
+        <small class="text-info font-monospace opacity-75">SIEM Veri Altyapısı • Doğrulanmış Ağ Hareketleri ve SCADA Güvenlik Günlükleri Arşivi</small>
+    </div>
+
+    <div class="soc-card mt-3">
+        <div class="soc-header">
+            <ul class="nav nav-pills" id="socTabs" role="tablist">
+                <li class="nav-item flex-fill text-center"><button class="nav-link active py-3 w-100" data-bs-toggle="tab" data-bs-target="#network" type="button" role="tab"><i class="bi bi-hdd-network-fill me-2"></i> Network Infractions</button></li>
+                <li class="nav-item flex-fill text-center"><button class="nav-link py-3 w-100" data-bs-toggle="tab" data-bs-target="#scada" type="button" role="tab"><i class="bi bi-lightning-charge-fill me-2"></i> SCADA Telemetry Anomalies</button></li>
+                <li class="nav-item flex-fill text-center"><button class="nav-link py-3 w-100" data-bs-toggle="tab" data-bs-target="#insider" type="button" role="tab"><i class="bi bi-incognito me-2"></i> Identity & Access Logs</button></li>
+            </ul>
+        </div>
+
+        <div class="card-body p-0">
+            <div class="tab-content" id="socTabsContent">
+
+                <div class="tab-pane fade show active" id="network" role="tabpanel">
+                    <div class="table-responsive">
+                        <table class="table mb-0" id="netTable">
+                            <thead>
+                                <tr><th style="width: 12%; padding-left: 1.5rem;">Event ID</th><th style="width: 18%;">Timestamp</th><th style="width: 18%;">Source IP</th><th style="width: 20%;">Threat Vector</th><th>Intelligence Report</th></tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var alert in Model.Where(a => a.AlertType == "DDOS_ATTACK" || a.AlertType == "PORT_SCAN"))
+                                {
+                                    <tr>
+                                        <td class="padding-left: 1.5rem;"><span class="event-id-highlight">#@alert.AlertId</span></td>
+                                        <td class="text-secondary font-monospace">@alert.Timestamp.ToString("HH:mm:ss | dd.MM.yyyy")</td>
+                                        <td><span class="ip-highlight">@alert.SourceIP</span></td>
+                                        <td><span class="badge-cyber @(alert.AlertType == "DDOS_ATTACK" ? "badge-glow-red" : "badge-glow-blue")">@alert.AlertType</span></td>
+                                        <td><span class="log-message-highlight">@alert.Message</span></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center p-3 border-top border-secondary cyber-pagination" id="netControls">
+                        <select class="form-select form-select-sm p-1 rounded font-monospace" id="netSize" style="width: auto; font-size: 0.8rem;">
+                            <option value="10" selected>10 Rows</option>
+                            <option value="25">25 Rows</option>
+                            <option value="50">50 Rows</option>
+                        </select>
+                        <div class="d-flex align-items-center gap-1">
+                            <button class="cyber-page-btn" id="netPrev"><i class="bi bi-chevron-left"></i></button>
+                            <div class="d-flex gap-1" id="netPages"></div>
+                            <button class="cyber-page-btn" id="netNext"><i class="bi bi-chevron-right"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="scada" role="tabpanel">
+                    <div class="table-responsive">
+                        <table class="table mb-0" id="scadaTable">
+                            <thead>
+                                <tr><th style="width: 12%; padding-left: 1.5rem;">Event ID</th><th style="width: 18%;">Timestamp</th><th style="width: 18%;">Source IP</th><th style="width: 22%;">Classification</th><th>Forensic Analysis Narrative</th></tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var alert in Model.Where(a => a.AlertType == "AI_ANOMALY" || a.AlertType == "OPERASYONEL_ANOMALI" || a.AlertType == "SİBER_ŞÜPHE"))
+                                {
+                                    <tr>
+                                        <td class="padding-left: 1.5rem;"><span class="event-id-highlight">#@alert.AlertId</span></td>
+                                        <td class="text-secondary font-monospace">@alert.Timestamp.ToString("HH:mm:ss | dd.MM.yyyy")</td>
+                                        <td><span class="ip-highlight">@alert.SourceIP</span></td>
+                                        <td><span class="badge-cyber badge-glow-purple"><i class="bi bi-cpu-fill me-1"></i> SPOOFING DETECTED</span></td>
+                                        <td>
+                                            <span class="badge me-2" style="background-color: rgba(111, 66, 193, 0.2); border: 1px solid #d8b4fe; color: #e9d5ff; font-size: 0.75rem;"><i class="bi bi-cpu"></i> 🧠 AI Analizli</span>
+                                            <span class="log-message-highlight">@alert.Message</span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center p-3 border-top border-secondary cyber-pagination" id="scadaControls">
+                        <select class="form-select form-select-sm p-1 rounded font-monospace" id="scadaSize" style="width: auto; font-size: 0.8rem;">
+                            <option value="10" selected>10 Rows</option>
+                            <option value="25">25 Rows</option>
+                            <option value="50">50 Rows</option>
+                        </select>
+                        <div class="d-flex align-items-center gap-1">
+                            <button class="cyber-page-btn" id="scadaPrev"><i class="bi bi-chevron-left"></i></button>
+                            <div class="d-flex gap-1" id="scadaPages"></div>
+                            <button class="cyber-page-btn" id="scadaNext"><i class="bi bi-chevron-right"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="insider" role="tabpanel">
+                    <div class="table-responsive">
+                        <table class="table mb-0" id="insiderTable">
+                            <thead>
+                                <tr><th style="width: 12%; padding-left: 1.5rem;">Event ID</th><th style="width: 18%;">Timestamp</th><th style="width: 18%;">Source IP</th><th style="width: 20%;">Vector Type</th><th>Audit Details</th></tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var alert in Model.Where(a => a.AlertType == "INSIDER_THREAT" || a.AlertType == "LOGIN_SUCCESS"))
+                                {
+                                    <tr>
+                                        <td class="padding-left: 1.5rem;"><span class="event-id-highlight">#@alert.AlertId</span></td>
+                                        <td class="text-secondary font-monospace">@alert.Timestamp.ToString("HH:mm:ss | dd.MM.yyyy")</td>
+                                        <td><span class="ip-highlight">@alert.SourceIP</span></td>
+                                        <td><span class="badge-cyber @(alert.AlertType == "INSIDER_THREAT" ? "badge-glow-red" : "badge-glow-yellow")">@alert.AlertType</span></td>
+                                        <td><span class="log-message-highlight">@alert.Message</span></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center p-3 border-top border-secondary cyber-pagination" id="insiderControls">
+                        <select class="form-select form-select-sm p-1 rounded font-monospace" id="insiderSize" style="width: auto; font-size: 0.8rem;">
+                            <option value="10" selected>10 Rows</option>
+                            <option value="25">25 Rows</option>
+                            <option value="50">50 Rows</option>
+                        </select>
+                        <div class="d-flex align-items-center gap-1">
+                            <button class="cyber-page-btn" id="insiderPrev"><i class="bi bi-chevron-left"></i></button>
+                            <div class="d-flex gap-1" id="insiderPages"></div>
+                            <button class="cyber-page-btn" id="insiderNext"><i class="bi bi-chevron-right"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            function setupGridPagination(tableId, controlsIdPrefix) {
+                const rows = Array.from(document.querySelectorAll(`#${tableId} tbody tr`));
+                let currentPage = 1, pageSize = 10;
+                const prevBtn = document.getElementById(`${controlsIdPrefix}Prev`), nextBtn = document.getElementById(`${controlsIdPrefix}Next`), pagesContainer = document.getElementById(`${controlsIdPrefix}Pages`), sizeSelect = document.getElementById(`${controlsIdPrefix}Size`);
+
+                function render() {
+                    const totalPages = Math.ceil(rows.length / pageSize) || 1;
+                    rows.forEach((row, idx) => { row.style.display = (idx >= (currentPage - 1) * pageSize && idx < currentPage * pageSize) ? "" : "none"; });
+                    pagesContainer.innerHTML = "";
+                    let startPage = Math.max(1, currentPage - 2), endPage = Math.min(totalPages, startPage + 4);
+                    for (let i = startPage; i <= endPage; i++) {
+                        const btn = document.createElement("button"); btn.className = `cyber-page-btn ${i === currentPage ? "active" : ""}`; btn.innerText = i;
+                        btn.addEventListener("click", () => { currentPage = i; render(); }); pagesContainer.appendChild(btn);
+                    }
+                    prevBtn.disabled = currentPage === 1; nextBtn.disabled = currentPage === totalPages;
+                }
+                prevBtn.addEventListener("click", () => { currentPage--; render(); }); nextBtn.addEventListener("click", () => { currentPage++; render(); });
+                sizeSelect.addEventListener("change", function() { pageSize = parseInt(this.value); currentPage = 1; render(); });
+                render();
+            }
+            setupGridPagination("netTable", "net"); setupGridPagination("scadaTable", "scada"); setupGridPagination("insiderTable", "insider");
+        });
+    </script>
+}

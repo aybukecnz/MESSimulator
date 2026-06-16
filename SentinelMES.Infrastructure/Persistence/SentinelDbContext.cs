@@ -14,6 +14,7 @@ public class SentinelDbContext : DbContext
     public DbSet<ActiveAlert> ActiveAlerts { get; set; }
     public DbSet<AllowedAsset> AllowedAssets { get; set; }
     public DbSet<FirewallPolicy> FirewallPolicies { get; set; }
+    public DbSet<IncidentTriage> IncidentTriage { get; set; }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -51,6 +52,15 @@ public class SentinelDbContext : DbContext
             entity.Property(e => e.DeviceName).HasColumnName("devicename");
             entity.Property(e => e.AllowedIp).HasColumnName("allowedip");
             entity.Property(e => e.AllowedMac).HasColumnName("allowedmac");
+        });
+        modelBuilder.Entity<IncidentTriage>(entity =>
+        {
+            entity.ToTable("incidenttriage", "public");
+            entity.HasKey(e => e.LogId); // LogId burada Primary Key'dir
+            entity.Property(e => e.LogId).HasColumnName("logid");
+            entity.Property(e => e.Status).HasColumnName("status");
+            entity.Property(e => e.AnalystNote).HasColumnName("analystnote");
+            entity.Property(e => e.ResolvedAt).HasColumnName("resolvedat");
         });
     }
 }

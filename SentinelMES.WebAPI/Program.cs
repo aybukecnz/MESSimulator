@@ -1,24 +1,25 @@
 ﻿using SentinelMES.Application;
 using SentinelMES.Infrastructure;
 
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-object value = builder.Services.AddControllers();
+builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-//  MİMARİ BAĞLANTILAR: Diğer katmanlardaki IoC kayıtlarını çağırıyoruz
+// 🧠 MİMARİ BAĞLANTILAR: Diğer katmanlardaki IoC kayıtlarını çağırıyoruz
 builder.Services.AddApplicationServices();
 builder.Services.AddInfrastructureServices(builder.Configuration);
 
-// CORS Politikası (Frontend uygulamalarının API'ye erişebilmesi için)
+// 📡 CORS POLİTİKASI: Dashboard (WebUI) uygulamasının API'ye pürüzsüz bağlanabilmesi için köprü
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", builder =>
+    options.AddPolicy("AllowAll", policy =>
     {
-        builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
     });
 });
 
@@ -31,9 +32,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// UseHttpsRedirection();
+// Geliştirme ortamında sertifika hatalarını önlemek için UseHttpsRedirection devre dışı bırakıldı.
 
-app.UseCors("AllowAll"); // CORS politikasını aktifleştiriyoruz
+// 🚨 KESİN KURAL: CORS politikası Authorization ve MapControllers'tan ÖNCE tetiklenmelidir!
+app.UseCors("AllowAll");
 
 app.UseAuthorization();
 

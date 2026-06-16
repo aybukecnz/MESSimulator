@@ -1,0 +1,6 @@
+﻿CREATE TABLE IncidentTriage (
+    LogId INT PRIMARY KEY,
+    Status VARCHAR(20) NOT NULL, -- 'TRUE_POSITIVE' veya 'FALSE_POSITIVE'
+    AnalystNote TEXT,
+    ResolvedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

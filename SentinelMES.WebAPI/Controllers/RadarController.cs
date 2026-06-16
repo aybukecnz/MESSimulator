@@ -33,7 +33,8 @@ namespace SentinelIMES.WebAPI.Controllers
                     countryName = log.CountryName,
                     countryCode = log.CountryCode,
                     attackType = log.ActionType,
-                    time = log.Timestamp.ToString("HH:mm:ss")
+                    time = log.Timestamp.ToString("HH:mm:ss"),
+                    details = log.Details
                 })
                 .ToListAsync();
 

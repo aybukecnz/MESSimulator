@@ -3,48 +3,84 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - SentinelMES.WebUI</title>
-    <script type="importmap"></script>
+    <title>@ViewData["Title"] - SentinelMES</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/SentinelMES.WebUI.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <style>
+        /* 🚨 GLOBAL KESİN ARKA PLAN KARARTICI (BEYAZ SIZINTILARA SON) */
+        html, body, .wrapper, footer, footer p, header, .navbar, .navbar-collapse {
+            background-color: #0b0f19 !important;
+            background: #0b0f19 !important;
+            color: #f8fafc !important;
+        }
+
+        .container, .container-fluid, main, role["main"], .body-content {
+            background-color: #0b0f19 !important;
+            background: #0b0f19 !important;
+            max-width: 100% !important;
+            border: none !important;
+            box-shadow: none !important;
+        }
+
+        header, .navbar {
+            border-bottom: 1px solid #1f2937 !important;
+        }
+
+        .navbar-brand, .nav-link {
+            color: #94a3b8 !important;
+        }
+
+            .nav-link:hover, .navbar-brand:hover {
+                color: #38bdf8 !important;
+            }
+
+        footer {
+            border-top: 1px solid #1f2937 !important;
+            color: #64748b !important;
+        }
+    </style>
 </head>
 <body>
     <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">SentinelMES.WebUI</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm mb-3">
+            <div class="container-fluid px-4">
+                <a class="navbar-brand fw-bold text-white" asp-area="" asp-controller="Home" asp-action="Dashboard">
+                    <i class="bi bi-shield-lock-fill text-primary"></i> Sentinel<span class="text-primary">MES</span>
+                </a>
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
+                    <ul class="navbar-nav flex-grow-1 ms-3 gap-2">
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                            <a class="nav-link fw-bold" asp-area="" asp-controller="Home" asp-action="Dashboard">
+                                <i class="bi bi-grid-1x2-fill"></i> Dashboard
+                            </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                            <a class="nav-link fw-bold" asp-area="" asp-controller="Home" asp-action="AuditLogs">
+                                <i class="bi bi-database-fill"></i> Audit Logs
+                            </a>
                         </li>
                     </ul>
                 </div>
             </div>
         </nav>
     </header>
-    <div class="container">
+
+    <div class="container-fluid px-4">
         <main role="main" class="pb-3">
             @RenderBody()
         </main>
     </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - SentinelMES.WebUI - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+    <footer class="footer text-muted py-3 mt-auto">
+        <div class="container-fluid px-4 font-monospace small">
+            &copy; 2026 - SentinelMES.WebUI - <span class="text-info">SECURE OPERATIONAL TECHNOLOGY</span>
         </div>
     </footer>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
