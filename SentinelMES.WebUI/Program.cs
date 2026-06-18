@@ -1,34 +1,27 @@
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// 1. ÝÞTE HAYAT KURTARAN SATIR (ZAP'ýn çökerttiði View motorunu ayaða kaldýrýr)
 builder.Services.AddControllersWithViews();
 
-builder.Services.AddControllers().AddJsonOptions(x =>
-   x.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles);
-
+// 2. HomeController'da _httpClient kullanabilmen için gerekli servis
+builder.Services.AddHttpClient();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
-
 app.UseHttpsRedirection();
+app.MapStaticAssets(); // .NET 9.0 statik dosya yöneticisi
 app.UseRouting();
-
 app.UseAuthorization();
-
-app.MapStaticAssets();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}")
+    pattern: "{controller=Home}/{action=Dashboard}/{id?}")
     .WithStaticAssets();
-
 
 app.Run();
