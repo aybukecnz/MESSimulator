@@ -9,14 +9,16 @@ public class HomeController : Controller
 {
     private readonly HttpClient _httpClient;
 
-    public HomeController()
+    // .NET arka planda HttpClient'i kendisi üretip buraya yollar
+    public HomeController(HttpClient httpClient)
     {
-        _httpClient = new HttpClient { BaseAddress = new Uri("https://localhost:5001") };
+        _httpClient = httpClient;
+        _httpClient.BaseAddress = new Uri("https://localhost:5001");
     }
 
     // STRATEJİK KOMUTA MERKEZİ (DASHBOARD)
-    [Route("")]
-    [Route("Home/Dashboard")]
+    // [Route("")]
+    // [Route("Home/Dashboard")]
     public async Task<IActionResult> Dashboard()
     {
         List<AlertViewModel> unifiedAlerts = new();
@@ -83,6 +85,7 @@ public class HomeController : Controller
             ViewBag.ErrorMessage = $"Log Arşivine bağlanılamadı: {ex.Message}";
         }
 
-        return View(archivedAlerts.OrderByDescending(a => a.Timestamp).ToList());
+        // Eğer unifiedAlerts null ise, çökmesini engellemek için boş bir liste gönder (?? new List...)
+        return View(archivedAlerts?.OrderByDescending(a => a.Timestamp).ToList() ?? new List<AlertViewModel>());
     }
 }
